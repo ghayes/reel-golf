@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Reel Golf — Prototype</title>
 <link href="https://fonts.googleapis.com/css2?family=Staatliches&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root{
     --pine:#16281F; --water:#0F4C52; --deep:#072E33;
@@ -38,6 +39,17 @@
   #overlay h1 span{color:var(--cream);}
   #overlay .tag{font-family:ui-monospace,Menlo,monospace;font-size:13px;opacity:.75;
     letter-spacing:.12em;text-transform:uppercase;margin:6px 0 22px;}
+  #userRow{display:flex;align-items:center;gap:8px;margin:-10px 0 20px;
+    font-family:ui-monospace,Menlo,monospace;font-size:13px;}
+  #userRow label{opacity:.7;}
+  #userRow input{font:inherit;font-size:14px;color:var(--cream);background:rgba(247,243,231,.08);
+    border:1px solid rgba(247,243,231,.35);border-radius:5px;padding:5px 8px;width:150px;}
+  #userRow input:focus-visible{outline:2px solid var(--amber);}
+  #userRow button{font:inherit;font-size:12px;letter-spacing:.06em;color:var(--pine);
+    background:var(--amber);border:none;border-radius:5px;padding:6px 12px;cursor:pointer;}
+  #userMsg{font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.04em;
+    margin:-14px 0 18px;min-height:1.4em;color:#FF9E7A;}
+  #userMsg.ok{color:#8FBF7A;}
   #overlay .rules{max-width:420px;font-family:ui-monospace,Menlo,monospace;font-size:14px;
     line-height:1.75;text-align:left;margin-bottom:26px;}
   #overlay .rules b{color:var(--amber);}
@@ -48,6 +60,10 @@
   #overlay button:focus-visible{outline:3px solid var(--cream);outline-offset:3px;}
   #finalStats{font-family:ui-monospace,Menlo,monospace;font-size:15px;line-height:2;margin-bottom:22px;}
   #finalStats em{color:var(--amber);font-style:normal;}
+  #siteNav{display:flex;gap:16px;margin-top:18px;font-family:ui-monospace,Menlo,monospace;
+    font-size:12px;letter-spacing:.08em;text-transform:uppercase;}
+  #siteNav a{color:rgba(247,243,231,.6);text-decoration:none;border-bottom:1px solid transparent;}
+  #siteNav a:hover{color:var(--amber);border-color:var(--amber);}
   .hidden{display:none !important;}
   @media (prefers-reduced-motion: reduce){ .stamp.show{animation:none;opacity:1;transform:translate(-50%,-50%) rotate(-6deg) scale(1);} }
 </style>
@@ -60,6 +76,12 @@
   <div id="overlay">
     <h1>REEL <span>GOLF</span></h1>
     <div class="tag">Field-tested off a dock &middot; est. sometime in the &rsquo;70s</div>
+    <div id="userRow">
+      <label for="usernameInput">Playing as</label>
+      <input id="usernameInput" maxlength="20" placeholder="loading&hellip;" disabled>
+      <button id="usernameSave">SAVE</button>
+    </div>
+    <div id="userMsg"></div>
     <div class="rules" id="rulesBlock">
       <b>HOLD</b> to wind up your swing. <b>RELEASE</b> to hit.<br>
       Land in the red and your line snaps &mdash; ball gone.<br><br>
@@ -70,6 +92,10 @@
     </div>
     <div id="finalStats" class="hidden"></div>
     <button id="startBtn">TEE UP</button>
+    <nav id="siteNav">
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="trophy-wall.html">Trophy Wall</a>
+    </nav>
   </div>
 </div>
 
@@ -83,6 +109,9 @@ const startBtn = document.getElementById('startBtn');
 const rulesBlock = document.getElementById('rulesBlock');
 const finalStats = document.getElementById('finalStats');
 const stampEl = document.getElementById('stamp');
+const usernameInput = document.getElementById('usernameInput');
+const usernameSave = document.getElementById('usernameSave');
+const userMsg = document.getElementById('userMsg');
 
 let W=0, H=0, DPR=1;
 function resize(){
@@ -92,6 +121,122 @@ function resize(){
   ctx.setTransform(DPR,0,0,DPR,0,0);
 }
 window.addEventListener('resize', resize); resize();
+
+// ---------- Supabase (scores / catches / trophies) ----------
+const SUPABASE_URL = 'https://allwunqurqgdaxjnovhh.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsbHd1bnF1cnFnZGF4am5vdmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNjgwNzUsImV4cCI6MjA5OTY0NDA3NX0.AamB6_7XYRnlPt9XqNxb4MZaU9qyFVPC9CoybQRa-FY';
+let sb = null, sbUser = null;
+try { if (window.supabase) sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+catch(e){ console.warn('Supabase init failed', e); }
+
+function randomUsername(){
+  const adjs=['Rusty','Windy','Lucky','Quiet','Salty','Rowdy','Foggy','Sunny','Grizzled','Stormy'];
+  const nouns=['Angler','Caster','Dockhand','Skipper','Wader','Trawler','Baitman','Reelman'];
+  const a = adjs[Math.floor(Math.random()*adjs.length)], n = nouns[Math.floor(Math.random()*nouns.length)];
+  return a + n + Math.floor(100 + Math.random()*900);
+}
+
+let sbUsername = null;
+
+async function ensurePlayerRow(){
+  if (!sb || !sbUser) return;
+  const { data, error } = await sb.from('players').select('id,username').eq('id', sbUser.id).maybeSingle();
+  if (error){ console.warn('players lookup failed', error); return; }
+  if (data){
+    sbUsername = data.username;
+  } else {
+    sbUsername = randomUsername();
+    const { error: insErr } = await sb.from('players').insert({ id: sbUser.id, username: sbUsername });
+    if (insErr) console.warn('players insert failed', insErr);
+  }
+}
+
+function setUserMsg(text, ok){
+  userMsg.textContent = text;
+  userMsg.classList.toggle('ok', !!ok);
+}
+
+async function saveUsername(){
+  const name = usernameInput.value.trim();
+  if (name === sbUsername) return;
+  if (!/^[A-Za-z0-9_ ]{3,20}$/.test(name)){
+    setUserMsg('3-20 letters, numbers, spaces or _', false); return;
+  }
+  usernameSave.disabled = true;
+  const { error } = await sb.from('players').update({ username: name }).eq('id', sbUser.id);
+  usernameSave.disabled = false;
+  if (error){
+    setUserMsg(error.code === '23505' ? 'That name is taken — try another.' : 'Could not save name.', false);
+    return;
+  }
+  sbUsername = name;
+  setUserMsg('Saved!', true);
+}
+usernameSave.addEventListener('click', saveUsername);
+usernameInput.addEventListener('keydown', e=>{ if (e.key==='Enter') saveUsername(); });
+
+async function initAuth(){
+  if (!sb){ usernameInput.placeholder = 'offline'; return; }
+  try{
+    const { data:{ session } } = await sb.auth.getSession();
+    if (session){ sbUser = session.user; }
+    else {
+      const { data, error } = await sb.auth.signInAnonymously();
+      if (error) throw error;
+      sbUser = data.user;
+    }
+    if (sbUser) await ensurePlayerRow();
+    if (sbUsername){
+      usernameInput.value = sbUsername;
+      usernameInput.disabled = false;
+    }
+  } catch(e){
+    console.warn('Supabase auth failed (is anonymous sign-in enabled?)', e);
+    usernameInput.placeholder = 'unavailable';
+  }
+}
+initAuth();
+
+async function submitRound(summary){
+  if (!sb || !sbUser) return;
+  try{
+    const { data: playerRow } = await sb.from('players')
+      .select('total_score,best_distance,balls_played').eq('id', sbUser.id).maybeSingle();
+    await sb.from('players').update({
+      total_score: (playerRow?.total_score||0) + summary.score,
+      best_distance: Math.max(playerRow?.best_distance||0, summary.bestDist),
+      balls_played: (playerRow?.balls_played||0) + 3,
+    }).eq('id', sbUser.id);
+
+    const { data: roundRow, error: roundErr } = await sb.from('rounds')
+      .insert({ player_id: sbUser.id, score: summary.score, fish_caught: summary.fishCaught })
+      .select('id').single();
+    if (roundErr) throw roundErr;
+
+    if (summary.catches.length){
+      const rows = summary.catches.map(c => ({
+        player_id: sbUser.id, round_id: roundRow.id,
+        species: c.species, distance_yd: c.distance_yd, bonus_points: c.bonus_points,
+      }));
+      const { error: catchErr } = await sb.from('catches').insert(rows);
+      if (catchErr) console.warn('catches insert failed', catchErr);
+    }
+
+    const trophyCodes = [];
+    if (summary.fishCaught>0) trophyCodes.push('first_fish');
+    if (summary.catches.some(c=>c.species==='PIKE')) trophyCodes.push('first_pike');
+    if (summary.ring2x) trophyCodes.push('double_ring');
+    if (summary.bestDist>=150) trophyCodes.push('long_drive_150');
+    if (summary.score>=100) trophyCodes.push('century_score');
+    if (summary.lifetimeSnaps>=5) trophyCodes.push('snap_five');
+    if (trophyCodes.length){
+      const rows = trophyCodes.map(code=>({ player_id: sbUser.id, trophy_code: code }));
+      const { error: trophyErr } = await sb.from('player_trophies')
+        .upsert(rows, { onConflict:'player_id,trophy_code', ignoreDuplicates:true });
+      if (trophyErr) console.warn('trophy upsert failed', trophyErr);
+    }
+  } catch(e){ console.warn('Supabase round sync failed', e); }
+}
 
 // ---------- world constants ----------
 const YARD = 9;                 // px per yard (world units)
@@ -104,6 +249,7 @@ const BALL_R = 5;
 const S = {};
 function newRound(){
   S.score = 0; S.balls = 3; S.bestDist = 0; S.fishCaught = 0;
+  S.roundCatches = []; S.everRing2x = false;
   nextBall();
 }
 function nextBall(){
@@ -191,6 +337,7 @@ function contact(){
 function snapLine(reason){
   S.phase='snapped'; S.msg=reason;
   S.balls--;
+  localStorage.setItem('rg_snaps', String((parseInt(localStorage.getItem('rg_snaps')||'0',10))+1));
   stampEl.classList.remove('show'); void stampEl.offsetWidth;
   stampEl.classList.add('show');
   setTimeout(()=>{
@@ -203,7 +350,11 @@ function landBall(){
   S.phase='landed';
   let pts = Math.round(S.distYd) * S.shotMult;
   let fishPts = 0;
-  if (S.fish && S.fish.st<=0){ fishPts = S.fish.bonus; S.fishCaught++; }
+  if (S.fish && S.fish.st<=0){
+    fishPts = S.fish.bonus; S.fishCaught++;
+    S.roundCatches.push({species:S.fish.name, distance_yd:Math.round(S.distYd), bonus_points:fishPts});
+  }
+  if (S.shotMult>1) S.everRing2x = true;
   S.score += pts + fishPts;
   S.msg = `+${pts}${fishPts? ' +'+fishPts+' '+S.fish.name : ''}`;
   S.balls--;
@@ -220,6 +371,14 @@ function gameOver(){
     `FISH LANDED <em>${S.fishCaught}</em>`;
   startBtn.textContent = 'PLAY AGAIN';
   overlay.classList.remove('hidden');
+  submitRound({
+    score: S.score,
+    bestDist: S.bestDist,
+    fishCaught: S.fishCaught,
+    catches: S.roundCatches,
+    ring2x: S.everRing2x,
+    lifetimeSnaps: parseInt(localStorage.getItem('rg_snaps')||'0',10),
+  });
 }
 
 startBtn.addEventListener('click', ()=>{

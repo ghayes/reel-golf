@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reel Golf — Leaderboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Staatliches&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --pine:#16281F; --water:#0F4C52; --deep:#072E33;
+    --amber:#FFC978; --cream:#F7F3E7; --rust:#C4502E;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{min-height:100%;background:var(--pine);
+    font-family:'Staatliches','Arial Narrow',Arial,sans-serif;color:var(--cream);}
+  .wrap{max-width:640px;margin:0 auto;padding:32px 20px 60px;}
+  h1{font-size:min(14vw,54px);letter-spacing:.06em;color:var(--amber);text-align:center;line-height:.95;}
+  h1 span{color:var(--cream);}
+  nav{display:flex;justify-content:center;gap:18px;margin:14px 0 34px;
+    font-family:ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.1em;
+    text-transform:uppercase;}
+  nav a{color:rgba(247,243,231,.65);text-decoration:none;border-bottom:1px solid transparent;}
+  nav a:hover, nav a.active{color:var(--amber);border-color:var(--amber);}
+  .state{text-align:center;font-family:ui-monospace,Menlo,monospace;font-size:13px;
+    opacity:.7;margin:40px 0;}
+  table{width:100%;border-collapse:collapse;font-family:ui-monospace,Menlo,monospace;font-size:13px;}
+  thead th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    opacity:.55;padding:0 10px 8px;font-weight:normal;}
+  thead th.num, tbody td.num{text-align:right;}
+  tbody tr{background:rgba(247,243,231,.05);}
+  tbody tr:nth-child(odd){background:rgba(247,243,231,.09);}
+  tbody td{padding:10px;vertical-align:middle;}
+  tbody tr td:first-child{border-radius:6px 0 0 6px;}
+  tbody tr td:last-child{border-radius:0 6px 6px 0;}
+  .rank{font-family:'Staatliches',sans-serif;font-size:18px;color:var(--amber);width:2em;}
+  .rank.top1{color:#FFE29A;} .rank.top2{color:#E6D2B0;} .rank.top3{color:#D2A06A;}
+  .uname{color:var(--cream);font-weight:bold;}
+  td.num{color:rgba(247,243,231,.85);}
+  .score{color:var(--amber);font-weight:bold;}
+  .pager{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:18px;
+    font-family:ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.06em;}
+  .pager button{font:inherit;color:var(--pine);background:var(--amber);border:none;
+    border-radius:5px;padding:7px 16px;cursor:pointer;letter-spacing:.06em;text-transform:uppercase;}
+  .pager button:disabled{opacity:.35;cursor:default;}
+  .pager .pageNum{opacity:.7;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>REEL GOLF <span>LEADERBOARD</span></h1>
+  <nav>
+    <a href="index.html">Play</a>
+    <a href="leaderboard.html" class="active">Leaderboard</a>
+    <a href="trophy-wall.html">Trophy Wall</a>
+  </nav>
+  <div id="content"><div class="state">Loading scores&hellip;</div></div>
+</div>
+<script>
+(() => {
+  const SUPABASE_URL = 'https://allwunqurqgdaxjnovhh.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsbHd1bnF1cnFnZGF4am5vdmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNjgwNzUsImV4cCI6MjA5OTY0NDA3NX0.AamB6_7XYRnlPt9XqNxb4MZaU9qyFVPC9CoybQRa-FY';
+  const content = document.getElementById('content');
+  const PAGE_SIZE = 10;
+  let page = 0;
+  let total = 0;
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  async function loadPage(p){
+    content.innerHTML = '<div class="state">Loading scores&hellip;</div>';
+    try {
+      const from = p*PAGE_SIZE, to = from+PAGE_SIZE-1;
+      const { data, count, error } = await sb.from('trophy_wall')
+        .select('username,total_score,best_distance,total_catches,pikes_landed', { count:'exact' })
+        .order('total_score', { ascending:false })
+        .range(from, to);
+      if (error) throw error;
+      total = count || 0;
+      page = p;
+
+      if (!total){
+        content.innerHTML = '<div class="state">No rounds played yet — be the first!</div>';
+        return;
+      }
+
+      const rows = data.map((pl,i) => {
+        const rank = from+i+1;
+        const rankCls = rank===1?'top1':rank===2?'top2':rank===3?'top3':'';
+        return `<tr>
+          <td class="rank ${rankCls}">${rank}</td>
+          <td class="uname">${esc(pl.username)}</td>
+          <td class="num score">${pl.total_score}</td>
+          <td class="num">${Math.round(pl.best_distance)} yd</td>
+          <td class="num">${pl.total_catches}${pl.pikes_landed>0 ? ' 🐊'+pl.pikes_landed : ''}</td>
+        </tr>`;
+      }).join('');
+
+      const pageCount = Math.max(1, Math.ceil(total/PAGE_SIZE));
+      content.innerHTML = `<table>
+        <thead><tr>
+          <th>#</th><th>Player</th>
+          <th class="num">Score</th><th class="num">Best Drive</th><th class="num">Fish</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="pager">
+        <button id="prevBtn" ${page===0?'disabled':''}>&larr; Prev</button>
+        <span class="pageNum">Page ${page+1} of ${pageCount}</span>
+        <button id="nextBtn" ${page>=pageCount-1?'disabled':''}>Next &rarr;</button>
+      </div>`;
+
+      document.getElementById('prevBtn').addEventListener('click', () => { if (page>0) loadPage(page-1); });
+      document.getElementById('nextBtn').addEventListener('click', () => { if (page<pageCount-1) loadPage(page+1); });
+    } catch(e){
+      console.warn('leaderboard load failed', e);
+      content.innerHTML = '<div class="state">Couldn’t load the leaderboard right now.</div>';
+    }
+  }
+
+  loadPage(0);
+})();
+</script>
+</body>
+</html>

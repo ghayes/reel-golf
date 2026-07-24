@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reel Golf — Trophy Wall</title>
+<link href="https://fonts.googleapis.com/css2?family=Staatliches&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --pine:#16281F; --water:#0F4C52; --deep:#072E33;
+    --amber:#FFC978; --cream:#F7F3E7; --rust:#C4502E;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{min-height:100%;background:var(--pine);
+    font-family:'Staatliches','Arial Narrow',Arial,sans-serif;color:var(--cream);}
+  .wrap{max-width:720px;margin:0 auto;padding:32px 20px 60px;}
+  h1{font-size:min(14vw,54px);letter-spacing:.06em;color:var(--amber);text-align:center;line-height:.95;}
+  h1 span{color:var(--cream);}
+  nav{display:flex;justify-content:center;gap:18px;margin:14px 0 30px;
+    font-family:ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.1em;
+    text-transform:uppercase;}
+  nav a{color:rgba(247,243,231,.65);text-decoration:none;border-bottom:1px solid transparent;}
+  nav a:hover, nav a.active{color:var(--amber);border-color:var(--amber);}
+  .state{text-align:center;font-family:ui-monospace,Menlo,monospace;font-size:13px;
+    opacity:.7;margin:40px 0;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:34px;
+    padding:16px;background:rgba(247,243,231,.05);border-radius:10px;}
+  .legend .badge{display:flex;align-items:center;gap:6px;font-family:ui-monospace,Menlo,monospace;
+    font-size:11px;background:rgba(247,243,231,.06);padding:6px 10px;border-radius:20px;}
+  .legend .icon{font-size:16px;}
+
+  .card{background:rgba(247,243,231,.06);border-radius:10px;padding:16px 18px;margin-bottom:12px;}
+  .card .head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;}
+  .card .uname{font-family:'Staatliches',sans-serif;font-size:22px;color:var(--cream);}
+  .card .stats{font-family:ui-monospace,Menlo,monospace;font-size:11px;opacity:.6;}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;}
+  .badge-slot{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:20px;
+    font-family:ui-monospace,Menlo,monospace;font-size:11px;background:rgba(247,243,231,.05);
+    filter:grayscale(1);opacity:.3;}
+  .badge-slot.earned{filter:none;opacity:1;background:rgba(255,201,120,.15);
+    border:1px solid rgba(255,201,120,.4);}
+  .badge-slot .icon{font-size:15px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>REEL GOLF <span>TROPHY WALL</span></h1>
+  <nav>
+    <a href="index.html">Play</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="trophy-wall.html" class="active">Trophy Wall</a>
+  </nav>
+  <div id="content"><div class="state">Loading trophies&hellip;</div></div>
+</div>
+<script>
+(async () => {
+  const SUPABASE_URL = 'https://allwunqurqgdaxjnovhh.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsbHd1bnF1cnFnZGF4am5vdmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNjgwNzUsImV4cCI6MjA5OTY0NDA3NX0.AamB6_7XYRnlPt9XqNxb4MZaU9qyFVPC9CoybQRa-FY';
+  const content = document.getElementById('content');
+
+  function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  try {
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const [{ data: defs, error: defErr }, { data: wall, error: wallErr }] = await Promise.all([
+      sb.from('trophy_defs').select('code,name,description,icon'),
+      sb.from('trophy_wall').select('username,total_score,best_distance,total_catches,pikes_landed,trophies'),
+    ]);
+    if (defErr) throw defErr;
+    if (wallErr) throw wallErr;
+
+    if (!defs || !defs.length){
+      content.innerHTML = '<div class="state">No trophies defined yet.</div>';
+      return;
+    }
+
+    const legend = `<div class="legend">${defs.map(d =>
+      `<div class="badge" title="${esc(d.description)}"><span class="icon">${d.icon||'🏆'}</span>${esc(d.name)}</div>`
+    ).join('')}</div>`;
+
+    if (!wall || !wall.length){
+      content.innerHTML = legend + '<div class="state">No players yet — go play a round!</div>';
+      return;
+    }
+
+    const ranked = wall.map(p => ({ ...p, trophies: (p.trophies||[]).filter(Boolean) }))
+      .sort((a,b) => b.trophies.length - a.trophies.length || b.total_score - a.total_score);
+
+    const cards = ranked.map(p => {
+      const earned = new Set(p.trophies);
+      const badges = defs.map(d => `<div class="badge-slot ${earned.has(d.code)?'earned':''}" title="${esc(d.description)}">
+        <span class="icon">${d.icon||'🏆'}</span>${esc(d.name)}
+      </div>`).join('');
+      return `<div class="card">
+        <div class="head">
+          <span class="uname">${esc(p.username)}</span>
+          <span class="stats">${p.total_score} pts &middot; ${Math.round(p.best_distance)} yd best &middot; ${p.total_catches} fish</span>
+        </div>
+        <div class="badges">${badges}</div>
+      </div>`;
+    }).join('');
+
+    content.innerHTML = legend + cards;
+  } catch(e){
+    console.warn('trophy wall load failed', e);
+    content.innerHTML = '<div class="state">Couldn’t load the trophy wall right now.</div>';
+  }
+})();
+</script>
+</body>
+</html>
