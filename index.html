@@ -78,7 +78,7 @@
     <div class="tag">Field-tested off a dock &middot; est. sometime in the &rsquo;70s</div>
     <div id="userRow">
       <label for="usernameInput" id="authLabel">Playing as</label>
-      <input id="usernameInput" type="email" maxlength="50" placeholder="Enter email&hellip;" disabled>
+      <input id="usernameInput" type="email" maxlength="50" placeholder="Enter email&hellip;">
       <button id="usernameSave">LOGIN</button>
     </div>
     <div id="otpRow" class="hidden">
@@ -190,17 +190,13 @@ async function initAuth(){
     if (session){
       sbUser = session.user;
       await ensurePlayerRow();
-      if (sbUsername) usernameInput.value = sbUsername;
+      if (sbUsername) {
+        usernameInput.value = sbUsername;
+      } else {
+        usernameInput.value = session.user.email;
+      }
     } else {
-      // Prompt for phone if no session
-      usernameInput.placeholder = 'Enter phone (+1...)';
-      usernameInput.disabled = false;
-      usernameSave.textContent = 'LOGIN';
-      authLabel.textContent = 'Phone';
-    }
-    if (sbUsername){
-      usernameInput.value = sbUsername;
-      usernameInput.disabled = false;
+      usernameInput.placeholder = 'Enter email&hellip;';
     }
   } catch(e){
     console.warn('Supabase auth failed', e);
