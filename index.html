@@ -77,9 +77,13 @@
     <h1>REEL <span>GOLF</span></h1>
     <div class="tag">Field-tested off a dock &middot; est. sometime in the &rsquo;70s</div>
     <div id="userRow">
-      <label for="usernameInput">Playing as</label>
-      <input id="usernameInput" maxlength="20" placeholder="loading&hellip;" disabled>
-      <button id="usernameSave">SAVE</button>
+      <label for="usernameInput" id="authLabel">Playing as</label>
+      <input id="usernameInput" type="email" maxlength="50" placeholder="Enter email&hellip;" disabled>
+      <button id="usernameSave">LOGIN</button>
+    </div>
+    <div id="otpRow" class="hidden">
+      <input id="otpInput" maxlength="6" placeholder="Enter code">
+      <button id="otpVerify">VERIFY</button>
     </div>
     <div id="userMsg"></div>
     <div class="rules" id="rulesBlock">
@@ -112,6 +116,10 @@ const stampEl = document.getElementById('stamp');
 const usernameInput = document.getElementById('usernameInput');
 const usernameSave = document.getElementById('usernameSave');
 const userMsg = document.getElementById('userMsg');
+const otpRow = document.getElementById('otpRow');
+const otpInput = document.getElementById('otpInput');
+const otpVerify = document.getElementById('otpVerify');
+const authLabel = document.getElementById('authLabel');
 
 let W=0, H=0, DPR=1;
 function resize(){
@@ -179,23 +187,63 @@ async function initAuth(){
   if (!sb){ usernameInput.placeholder = 'offline'; return; }
   try{
     const { data:{ session } } = await sb.auth.getSession();
-    if (session){ sbUser = session.user; }
-    else {
-      const { data, error } = await sb.auth.signInAnonymously();
-      if (error) throw error;
-      sbUser = data.user;
+    if (session){
+      sbUser = session.user;
+      await ensurePlayerRow();
+      if (sbUsername) usernameInput.value = sbUsername;
+    } else {
+      // Prompt for phone if no session
+      usernameInput.placeholder = 'Enter phone (+1...)';
+      usernameInput.disabled = false;
+      usernameSave.textContent = 'LOGIN';
+      authLabel.textContent = 'Phone';
     }
-    if (sbUser) await ensurePlayerRow();
     if (sbUsername){
       usernameInput.value = sbUsername;
       usernameInput.disabled = false;
     }
   } catch(e){
-    console.warn('Supabase auth failed (is anonymous sign-in enabled?)', e);
-    usernameInput.placeholder = 'unavailable';
+    console.warn('Supabase auth failed', e);
   }
 }
 initAuth();
+
+async function handleLogin() {
+  const email = usernameInput.value.trim();
+  if (!email.includes('@')) { setUserMsg('Enter a valid email', false); return; }
+  
+  const { error } = await sb.auth.signInWithOtp({ email });
+  if (error) { setUserMsg(error.message, false); return; }
+  
+  usernameInput.classList.add('hidden');
+  usernameSave.classList.add('hidden');
+  otpRow.classList.remove('hidden');
+  setUserMsg('Check your email for the login code', true);
+}
+
+async function handleVerify() {
+  const token = otpInput.value.trim();
+  const email = usernameInput.value.trim();
+  
+  const { data, error } = await sb.auth.verifyOtp({ email, token, type: 'magiclink' });
+  if (error) { setUserMsg(error.message, false); return; }
+  
+  sbUser = data.user;
+  await ensurePlayerRow();
+  otpRow.classList.add('hidden');
+  usernameInput.classList.remove('hidden');
+  usernameSave.classList.remove('hidden');
+  usernameSave.textContent = 'SAVE';
+  usernameInput.type = 'text';
+  usernameInput.value = sbUsername || randomUsername();
+  setUserMsg('Logged in!', true);
+}
+
+usernameSave.addEventListener('click', () => {
+  if (usernameSave.textContent === 'LOGIN') handleLogin();
+  else saveUsername();
+});
+otpVerify.addEventListener('click', handleVerify);
 
 async function submitRound(summary){
   if (!sb || !sbUser) return;
