@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Reel Golf — Feature Log</title>
+<link href="https://fonts.googleapis.com/css2?family=Staatliches&display=swap" rel="stylesheet">
+<style>
+  :root{ --pine:#16281F; --amber:#FFC978; --cream:#F7F3E7; }
+  body{ background:var(--pine); color:var(--cream); font-family:'Staatliches',sans-serif; padding:40px; }
+  .wrap{ max-width:600px; margin:0 auto; }
+  h1{ color:var(--amber); margin-bottom:30px; }
+  .entry{ border-left:4px solid var(--amber); padding-left:20px; margin-bottom:20px; }
+  .title{ font-size:20px; }
+  .date{ font-size:12px; opacity:0.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>FEATURE LOG</h1>
+  <div id="logs">Loading features...</div>
+</div>
+<script>
+  (async () => {
+    const res = await fetch('https://api.github.com/repos/ghayes/reel-golf/issues?state=closed&labels=type: feature');
+    const issues = await res.json();
+    document.getElementById('logs').innerHTML = issues.map(i => `
+      <div class="entry">
+        <div class="title">${i.title}</div>
+        <div class="date">${new Date(i.closed_at).toLocaleDateString()}</div>
+      </div>
+    `).join('');
+  })();
+</script>
+</body>
+</html>
