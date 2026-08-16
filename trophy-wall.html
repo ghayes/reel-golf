@@ -109,8 +109,18 @@
     }).join('')}</div>`;
     document.getElementById('trophyGrid').innerHTML = legend + cards;
     document.getElementById('trophyHistory').innerHTML = timeline;
-    document.getElementById('viewGrid').addEventListener('click', () => { document.getElementById('trophyGrid').classList.remove('hidden'); document.getElementById('trophyHistory').classList.add('hidden'); });
-    document.getElementById('viewHistory').addEventListener('click', () => { document.getElementById('trophyHistory').classList.remove('hidden'); document.getElementById('trophyGrid').classList.add('hidden'); });
+    document.getElementById('viewGrid').addEventListener('click', () => { 
+        document.getElementById('trophyGrid').classList.remove('hidden'); 
+        document.getElementById('trophyHistory').classList.add('hidden');
+        document.getElementById('viewGrid').classList.add('active');
+        document.getElementById('viewHistory').classList.remove('active');
+    });
+    document.getElementById('viewHistory').addEventListener('click', () => { 
+        document.getElementById('trophyHistory').classList.remove('hidden'); 
+        document.getElementById('trophyGrid').classList.add('hidden');
+        document.getElementById('viewHistory').classList.add('active');
+        document.getElementById('viewGrid').classList.remove('active');
+    });
   } catch(e){ console.warn('trophy wall load failed', e); content.innerHTML = '<div class="state">Couldn’t load the trophy wall right now.</div>'; }
 })();
 </script>
