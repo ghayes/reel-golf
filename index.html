@@ -132,7 +132,7 @@ window.addEventListener('resize', resize); resize();
 
 // ---------- Supabase (scores / catches / trophies) ----------
 const SUPABASE_URL = 'https://allwunqurqgdaxjnovhh.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsbHd1bnF1cnFnZGF4am5vdmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNjgwNzUsImV4cCI6MjA5OTY0NDA3NX0.AamB6_7XYRnlPt9XqNxb4MZaU9qyFVPC9CoybQRa-FY';
+const SUPABASE_ANON_KEY = 'eyJhbG…a-FY';
 let sb = null, sbUser = null;
 try { if (window.supabase) sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
 catch(e){ console.warn('Supabase init failed', e); }
@@ -167,7 +167,8 @@ function setUserMsg(text, ok){
 async function saveUsername(){
   const name = usernameInput.value.trim();
   if (name === sbUsername) return;
-  if (!/^[A-Za-z0-9_ ]{3,20}$/.test(name)){
+  // Validation: Only enforce for username updates, not for email login
+  if (usernameSave.textContent === 'SAVE' && !/^[A-Za-z0-9_ ]{3,20}$/.test(name)){
     setUserMsg('3-20 letters, numbers, spaces or _', false); return;
   }
   usernameSave.disabled = true;
@@ -195,8 +196,11 @@ async function initAuth(){
       } else {
         usernameInput.value = session.user.email;
       }
+      usernameSave.textContent = 'SAVE';
     } else {
+      usernameInput.value = '';
       usernameInput.placeholder = 'Enter email...';
+      usernameSave.textContent = 'LOGIN';
     }
   } catch(e){
     console.warn('Supabase auth failed', e);
@@ -206,38 +210,42 @@ initAuth();
 
 async function handleLogin() {
   const email = usernameInput.value.trim();
-  if (!email.includes('@')) { setUserMsg('Enter a valid email', false); return; }
-  
-  // Clear any existing messages before starting login
-  setUserMsg('', false);
-
+  console.log("handleLogin: attempting auth for", email);
+  if (!email.includes("@")) { 
+    console.log("handleLogin: invalid email format");
+    setUserMsg("Enter a valid email", false); 
+    return; 
+  }
+  setUserMsg("", false);
   const { error } = await sb.auth.signInWithOtp({ 
     email,
-    options: { emailRedirectTo: 'https://app.reel-golf.com' }
+    options: { emailRedirectTo: "https://app.reel-golf.com" }
   });
-  if (error) { setUserMsg(error.message, false); return; }
-  
-  usernameInput.classList.add('hidden');
-  usernameSave.classList.add('hidden');
-  setUserMsg('Check your email for the login link!', true);
+  if (error) { 
+    console.error("handleLogin: Supabase error", error);
+    setUserMsg(error.message, false); 
+    return; 
+  }
+  console.log("handleLogin: email sent");
+  usernameInput.classList.add("hidden");
+  usernameSave.classList.add("hidden");
+  setUserMsg("Check your email for the login link!", true);
 }
 
 async function handleVerify() {
   const token = otpInput.value.trim();
   const email = usernameInput.value.trim();
-  
-  const { data, error } = await sb.auth.verifyOtp({ email, token, type: 'magiclink' });
+  const { data, error } = await sb.auth.verifyOtp({ email, token, type: "email" });
   if (error) { setUserMsg(error.message, false); return; }
-  
   sbUser = data.user;
   await ensurePlayerRow();
-  otpRow.classList.add('hidden');
-  usernameInput.classList.remove('hidden');
-  usernameSave.classList.remove('hidden');
-  usernameSave.textContent = 'SAVE';
-  usernameInput.type = 'text';
+  otpRow.classList.add("hidden");
+  usernameInput.classList.remove("hidden");
+  usernameSave.classList.remove("hidden");
+  usernameSave.textContent = "SAVE";
+  usernameInput.type = "text";
   usernameInput.value = sbUsername || randomUsername();
-  setUserMsg('Logged in!', true);
+  setUserMsg("Logged in!", true);
 }
 
 usernameSave.addEventListener('click', () => {
