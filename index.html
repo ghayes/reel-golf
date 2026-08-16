@@ -208,6 +208,9 @@ async function handleLogin() {
   const email = usernameInput.value.trim();
   if (!email.includes('@')) { setUserMsg('Enter a valid email', false); return; }
   
+  // Clear any existing messages before starting login
+  setUserMsg('', false);
+
   const { error } = await sb.auth.signInWithOtp({ 
     email,
     options: { emailRedirectTo: 'https://app.reel-golf.com' }
@@ -216,8 +219,6 @@ async function handleLogin() {
   
   usernameInput.classList.add('hidden');
   usernameSave.classList.add('hidden');
-  // We no longer need the OTP input for Magic Links.
-  // The user just waits for the email and clicks the link.
   setUserMsg('Check your email for the login link!', true);
 }
 
