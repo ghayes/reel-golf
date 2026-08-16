@@ -41,7 +41,25 @@
     border:1px solid rgba(255,201,120,.4);}
   .badge-slot .icon{font-size:15px;}
   .hidden{display:none !important;}
-  button { padding: 5px 15px; cursor: pointer; }
+  button {
+    padding: 10px 20px;
+    cursor: pointer;
+    background: rgba(247, 243, 231, 0.1);
+    color: var(--cream);
+    border: 1px solid var(--amber);
+    border-radius: 6px;
+    font-family: 'Staatliches', sans-serif;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  button.active {
+    background: var(--amber);
+    color: var(--pine);
+    font-weight: bold;
+  }
+  button:hover:not(.active) {
+    background: rgba(255, 201, 120, 0.2);
+  }
 </style>
 </head>
 <body>
