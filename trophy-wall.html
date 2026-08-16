@@ -24,13 +24,11 @@
   nav a:hover, nav a.active{color:var(--amber);border-color:var(--amber);}
   .state{text-align:center;font-family:ui-monospace,Menlo,monospace;font-size:13px;
     opacity:.7;margin:40px 0;}
-
   .legend{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:34px;
     padding:16px;background:rgba(247,243,231,.05);border-radius:10px;}
   .legend .badge{display:flex;align-items:center;gap:6px;font-family:ui-monospace,Menlo,monospace;
     font-size:11px;background:rgba(247,243,231,.06);padding:6px 10px;border-radius:20px;}
   .legend .icon{font-size:16px;}
-
   .card{background:rgba(247,243,231,.06);border-radius:10px;padding:16px 18px;margin-bottom:12px;}
   .card .head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;}
   .card .uname{font-family:'Staatliches',sans-serif;font-size:22px;color:var(--cream);}
@@ -42,6 +40,8 @@
   .badge-slot.earned{filter:none;opacity:1;background:rgba(255,201,120,.15);
     border:1px solid rgba(255,201,120,.4);}
   .badge-slot .icon{font-size:15px;}
+  .hidden{display:none !important;}
+  button { padding: 5px 15px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -52,61 +52,48 @@
     <a href="leaderboard.html">Leaderboard</a>
     <a href="trophy-wall.html" class="active">Trophy Wall</a>
   </nav>
-  <div id="content"><div class="state">Loading trophies...</div></div>
+  <div id="content">
+    <nav style="margin-bottom:20px; display:flex; justify-content:center; gap:10px;">
+      <button id="viewGrid" class="active">Trophy Grid</button>
+      <button id="viewHistory">History Timeline</button>
+    </nav>
+    <div id="trophyGrid"></div>
+    <div id="trophyHistory" class="hidden"></div>
+  </div>
 </div>
 <script>
 (async () => {
   const SUPABASE_URL = 'https://allwunqurqgdaxjnovhh.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsbHd1bnF1cnFnZGF4am5vdmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNjgwNzUsImV4cCI6MjA5OTY0NDA3NX0.AamB6_7XYRnlPt9XqNxb4MZaU9qyFVPC9CoybQRa-FY';
+  const SUPABASE_ANON_KEY = 'eyJhbG…a-FY';
   const content = document.getElementById('content');
-
   function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-
   try {
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const [{ data: defs, error: defErr }, { data: wall, error: wallErr }] = await Promise.all([
+    const [{ data: defs, error: defErr }, { data: wall, error: wallErr }, { data: history, error: histErr }] = await Promise.all([
       sb.from('trophy_defs').select('code,name,description,icon'),
       sb.from('trophy_wall').select('username,total_score,best_distance,total_catches,pikes_landed,trophies'),
+      sb.from('player_trophies').select('trophy_code,earned_at,players(username)').order('earned_at', { ascending: false }),
     ]);
     if (defErr) throw defErr;
     if (wallErr) throw wallErr;
-
-    if (!defs || !defs.length){
-      content.innerHTML = '<div class="state">No trophies defined yet.</div>';
-      return;
-    }
-
-    const legend = `<div class="legend">${defs.map(d =>
-      `<div class="badge" title="${esc(d.description)}"><span class="icon">${d.icon||'🏆'}</span>${esc(d.name)}</div>`
-    ).join('')}</div>`;
-
-    if (!wall || !wall.length){
-      content.innerHTML = legend + '<div class="state">No players yet — go play a round!</div>';
-      return;
-    }
-
-    const ranked = wall.map(p => ({ ...p, trophies: (p.trophies||[]).filter(Boolean) }))
-      .sort((a,b) => b.trophies.length - a.trophies.length || b.total_score - a.total_score);
-
+    if (histErr) throw histErr;
+    const legend = `<div class="legend">${defs.map(d => `<div class="badge" title="${esc(d.description)}"><span class="icon">${d.icon||'🏆'}</span>${esc(d.name)}</div>`).join('')}</div>`;
+    const ranked = wall.map(p => ({ ...p, trophies: (p.trophies||[]).filter(Boolean) })).sort((a,b) => b.trophies.length - a.trophies.length || b.total_score - a.total_score);
     const cards = ranked.map(p => {
       const earned = new Set(p.trophies);
-      const badges = defs.map(d => `<div class="badge-slot ${earned.has(d.code)?'earned':''}" title="${esc(d.description)}">
-        <span class="icon">${d.icon||'🏆'}</span>${esc(d.name)}
-      </div>`).join('');
-      return `<div class="card">
-        <div class="head">
-          <span class="uname">${esc(p.username)}</span>
-          <span class="stats">${p.total_score} pts &middot; ${Math.round(p.best_distance)} yd best &middot; ${p.total_catches} fish</span>
-        </div>
-        <div class="badges">${badges}</div>
-      </div>`;
+      const badges = defs.map(d => `<div class="badge-slot ${earned.has(d.code)?'earned':''}" title="${esc(d.description)}"><span class="icon">${d.icon||'🏆'}</span>${esc(d.name)}</div>`).join('');
+      return `<div class="card"><div class="head"><span class="uname">${esc(p.username)}</span><span class="stats">${p.total_score} pts &middot; ${Math.round(p.best_distance)} yd best &middot; ${p.total_catches} fish</span></div><div class="badges">${badges}</div></div>`;
     }).join('');
-
-    content.innerHTML = legend + cards;
-  } catch(e){
-    console.warn('trophy wall load failed', e);
-    content.innerHTML = '<div class="state">Couldn’t load the trophy wall right now.</div>';
-  }
+    const timeline = `<div class="card">${history.map(h => {
+        const def = defs.find(d => d.code === h.trophy_code);
+        const date = new Date(h.earned_at).toLocaleDateString();
+        return `<div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>${date} — <span class="icon">${def?.icon||'🏆'}</span> <b>${esc(def?.name||h.trophy_code)}</b></span><span style="opacity:0.6; font-size:12px;">${esc(h.players.username)}</span></div>`;
+    }).join('')}</div>`;
+    document.getElementById('trophyGrid').innerHTML = legend + cards;
+    document.getElementById('trophyHistory').innerHTML = timeline;
+    document.getElementById('viewGrid').addEventListener('click', () => { document.getElementById('trophyGrid').classList.remove('hidden'); document.getElementById('trophyHistory').classList.add('hidden'); });
+    document.getElementById('viewHistory').addEventListener('click', () => { document.getElementById('trophyHistory').classList.remove('hidden'); document.getElementById('trophyGrid').classList.add('hidden'); });
+  } catch(e){ console.warn('trophy wall load failed', e); content.innerHTML = '<div class="state">Couldn’t load the trophy wall right now.</div>'; }
 })();
 </script>
 </body>
