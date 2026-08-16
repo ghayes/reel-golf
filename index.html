@@ -132,7 +132,7 @@ window.addEventListener('resize', resize); resize();
 
 // ---------- Supabase (scores / catches / trophies) ----------
 const SUPABASE_URL = 'https://allwunqurqgdaxjnovhh.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbG…a-FY';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsbHd1bnF1cnFnZGF4am5vdmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNjgwNzUsImV4cCI6MjA5OTY0NDA3NX0.AamB6_7XYRnlPt9XqNxb4MZaU9qyFVPC9CoybQRa-FY';
 let sb = null, sbUser = null;
 try { if (window.supabase) sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
 catch(e){ console.warn('Supabase init failed', e); }
