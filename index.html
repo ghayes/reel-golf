@@ -285,7 +285,7 @@ async function submitRound(summary){
     if (summary.catches.some(c=>c.species==='PIKE')) trophyCodes.push('first_pike');
     if (summary.ring2x) trophyCodes.push('double_ring');
     if (summary.bestDist>=150) trophyCodes.push('long_drive_150');
-    if (summary.score>=100) trophyCodes.push('century_score');
+    if (summary.score>=100) trophyCodes.push('century_score');    if (summary.score>=1000) trophyCodes.push('thousand_score');
     if (summary.lifetimeSnaps>=5) trophyCodes.push('snap_five');
     if (trophyCodes.length){
       const rows = trophyCodes.map(code=>({ player_id: sbUser.id, trophy_code: code }));
