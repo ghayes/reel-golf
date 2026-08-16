@@ -196,7 +196,7 @@ async function initAuth(){
         usernameInput.value = session.user.email;
       }
     } else {
-      usernameInput.placeholder = 'Enter email&hellip;';
+      usernameInput.placeholder = 'Enter email...';
     }
   } catch(e){
     console.warn('Supabase auth failed', e);
