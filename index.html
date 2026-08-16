@@ -243,6 +243,7 @@ async function handleVerify() {
   usernameInput.classList.remove("hidden");
   usernameSave.classList.remove("hidden");
   usernameSave.textContent = "SAVE";
+  authLabel.textContent = "Playing as";
   usernameInput.type = "text";
   usernameInput.value = sbUsername || randomUsername();
   setUserMsg("Logged in!", true);
