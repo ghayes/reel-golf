@@ -7,13 +7,12 @@
 </head>
 <body>
     <h1>Reel Golf</h1>
-    <div id="auth-status">
-        <p style="background-color: #ffcccc; padding: 10px; border: 1px solid #ff0000; color: #cc0000;">
-            <strong>Warning:</strong> You are currently playing as an anonymous user. Your progress, scores, and trophies will not be saved.
+    <div id="game-controls">
+        <button onclick="window.location.href='/tee-off'" style="padding: 15px 30px; font-size: 1.2em; cursor: pointer;">Tee Off</button>
+        <p style="margin-top: 20px;">
+            <a href="/login" style="display: inline-block; padding: 10px 20px; background: #eee; text-decoration: none; border-radius: 5px; color: #333;">Sign in to save progress</a>
         </p>
-        <p>Welcome! You can <strong>Tee Off</strong> to play immediately, but please note that your progress, score, and trophies will <strong>not be saved</strong> if you are playing anonymously.</p>
-        <p><a href="/login">Sign in</a> to save your game, join the leaderboard, and build your trophy collection.</p>
-        <p style="font-size: 0.9em; color: #999;"><em>Note: Guest sessions may be cleared periodically.</em></p>
+        <p style="font-size: 0.75em; color: #888; margin-top: 15px;">Guest session – stats will not be saved.</p>
     </div>
 </body>
 </html>
