@@ -87,3 +87,9 @@ insert into shop_items (name, description, cost, item_type, asset_key) values
   ('Super Bait', 'Increases fish bite chance by +25%', 100, 'BAIT', 'super_bait'),
   ('Titanium Reel', '+20% faster reeling speed', 250, 'REEL', 'titanium_reel'),
   ('Neon Ball', 'Bright neon glow and ball trail', 100, 'SKIN', 'neon_ball');
+
+-- 3. Table & routine permissions for client roles
+grant select on public.shop_items to anon, authenticated;
+grant select on public.player_inventory to authenticated;
+grant execute on function public.purchase_item(int) to authenticated;
+grant execute on function public.submit_round(int, numeric, int, jsonb, boolean, int) to authenticated, anon;

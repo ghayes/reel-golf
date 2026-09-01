@@ -269,6 +269,8 @@ async function loadShopCatalog(){
     const { data, error } = await sb.from('shop_items').select('*').order('cost', { ascending: true });
     if (!error && data && data.length) {
       shopCatalog = data;
+    } else if (error) {
+      console.warn('Failed to load shop catalog', error);
     }
   } catch(e) {
     console.warn('Failed to load shop catalog', e);
@@ -306,7 +308,7 @@ function renderShop(){
   if (!shopItemList) return;
   updateCoinDisplays();
   if (!shopCatalog.length) {
-    shopItemList.innerHTML = '<div style="text-align:center; opacity:0.6; padding:20px; font-family:ui-monospace,monospace;">Loading shop items...</div>';
+    shopItemList.innerHTML = '<div style="text-align:center; opacity:0.6; padding:20px; font-family:ui-monospace,monospace;">No shop items available. Check connection and retry.</div>';
     return;
   }
 
