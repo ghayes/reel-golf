@@ -47,6 +47,8 @@
   #userRow input:focus-visible{outline:2px solid var(--amber);}
   #userRow button{font:inherit;font-size:12px;letter-spacing:.06em;color:var(--pine);
     background:var(--amber);border:none;border-radius:5px;padding:6px 12px;cursor:pointer;}
+  #userRow button#logoutBtn{background:rgba(247,243,231,.15);color:var(--cream);border:1px solid rgba(247,243,231,.3);}
+  #userRow button#logoutBtn:hover{background:rgba(196,80,46,.4);border-color:var(--rust);}
   #userMsg{font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.04em;
     margin:-14px 0 18px;min-height:1.4em;color:#FF9E7A;}
   #userMsg.ok{color:#8FBF7A;}
@@ -80,6 +82,7 @@
       <label for="usernameInput" id="authLabel">Playing as</label>
       <input id="usernameInput" type="email" maxlength="50" placeholder="Enter email...">
       <button id="usernameSave">LOGIN</button>
+      <button id="logoutBtn" class="hidden">LOGOUT</button>
     </div>
     <div id="otpRow" class="hidden">
       <input id="otpInput" maxlength="6" placeholder="Enter code">
@@ -115,6 +118,7 @@ const finalStats = document.getElementById('finalStats');
 const stampEl = document.getElementById('stamp');
 const usernameInput = document.getElementById('usernameInput');
 const usernameSave = document.getElementById('usernameSave');
+const logoutBtn = document.getElementById('logoutBtn');
 const userMsg = document.getElementById('userMsg');
 const otpRow = document.getElementById('otpRow');
 const otpInput = document.getElementById('otpInput');
@@ -164,6 +168,27 @@ function setUserMsg(text, ok){
   userMsg.classList.toggle('ok', !!ok);
 }
 
+function setAuthState(session){
+  if (session && session.user){
+    sbUser = session.user;
+    usernameInput.type = 'text';
+    usernameInput.value = sbUsername || session.user.email || '';
+    usernameInput.placeholder = 'Your username';
+    usernameSave.textContent = 'SAVE';
+    authLabel.textContent = 'Playing as';
+    logoutBtn.classList.remove('hidden');
+  } else {
+    sbUser = null;
+    sbUsername = null;
+    usernameInput.type = 'email';
+    usernameInput.value = '';
+    usernameInput.placeholder = 'Enter email...';
+    usernameSave.textContent = 'LOGIN';
+    authLabel.textContent = 'Playing as';
+    logoutBtn.classList.add('hidden');
+  }
+}
+
 async function saveUsername(){
   const name = usernameInput.value.trim();
   if (name === sbUsername) return;
@@ -181,16 +206,6 @@ async function saveUsername(){
   sbUsername = name;
   setUserMsg('Saved!', true);
 }
-usernameSave.addEventListener('click', () => {
-  if (usernameSave.textContent === 'LOGIN') handleLogin();
-  else saveUsername();
-});
-usernameInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    if (usernameSave.textContent === 'LOGIN') handleLogin();
-    else saveUsername();
-  }
-});
 
 async function initAuth(){
   if (!sb){ usernameInput.placeholder = 'offline'; return; }
@@ -199,22 +214,27 @@ async function initAuth(){
     if (session){
       sbUser = session.user;
       await ensurePlayerRow();
-      if (sbUsername) {
-        usernameInput.value = sbUsername;
-      } else {
-        usernameInput.value = session.user.email;
-      }
-      usernameSave.textContent = 'SAVE';
+      setAuthState(session);
     } else {
-      usernameInput.value = '';
-      usernameInput.placeholder = 'Enter email...';
-      usernameSave.textContent = 'LOGIN';
+      setAuthState(null);
     }
   } catch(e){
     console.warn('Supabase auth failed', e);
   }
 }
 initAuth();
+
+if (sb) {
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      sbUser = session.user;
+      await ensurePlayerRow();
+      setAuthState(session);
+    } else if (event === 'SIGNED_OUT') {
+      setAuthState(null);
+    }
+  });
+}
 
 async function handleLogin() {
   const email = usernameInput.value.trim();
@@ -237,6 +257,7 @@ async function handleLogin() {
   console.log("handleLogin: email sent");
   usernameInput.classList.add("hidden");
   usernameSave.classList.add("hidden");
+  logoutBtn.classList.add("hidden");
   setUserMsg("Check your email for the login link!", true);
 }
 
@@ -250,17 +271,34 @@ async function handleVerify() {
   otpRow.classList.add("hidden");
   usernameInput.classList.remove("hidden");
   usernameSave.classList.remove("hidden");
-  usernameSave.textContent = "SAVE";
-  authLabel.textContent = "Playing as";
-  usernameInput.type = "text";
-  usernameInput.value = sbUsername || randomUsername();
+  setAuthState(data.session || { user: data.user });
   setUserMsg("Logged in!", true);
+}
+
+async function handleLogout() {
+  if (!sb) return;
+  logoutBtn.disabled = true;
+  const { error } = await sb.auth.signOut();
+  logoutBtn.disabled = false;
+  if (error) {
+    setUserMsg(error.message, false);
+    return;
+  }
+  setAuthState(null);
+  setUserMsg("Logged out", true);
 }
 
 usernameSave.addEventListener('click', () => {
   if (usernameSave.textContent === 'LOGIN') handleLogin();
   else saveUsername();
 });
+usernameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (usernameSave.textContent === 'LOGIN') handleLogin();
+    else saveUsername();
+  }
+});
+logoutBtn.addEventListener('click', handleLogout);
 otpVerify.addEventListener('click', handleVerify);
 
 async function submitRound(summary){
