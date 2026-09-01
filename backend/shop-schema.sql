@@ -27,3 +27,7 @@ create policy "public read: shop_items" on shop_items for select using (true);
 create policy "self read: inventory" on player_inventory for select using (auth.uid() = player_id);
 -- Note: Direct client INSERT on player_inventory is intentionally omitted to prevent
 -- players from bypassing purchase_item() RPC to acquire items for free.
+
+-- Permissions
+grant select on public.shop_items to anon, authenticated;
+grant select on public.player_inventory to authenticated;
