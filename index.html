@@ -181,8 +181,16 @@ async function saveUsername(){
   sbUsername = name;
   setUserMsg('Saved!', true);
 }
-usernameSave.addEventListener('click', saveUsername);
-usernameInput.addEventListener('keydown', e=>{ if (e.key==='Enter') saveUsername(); });
+usernameSave.addEventListener('click', () => {
+  if (usernameSave.textContent === 'LOGIN') handleLogin();
+  else saveUsername();
+});
+usernameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (usernameSave.textContent === 'LOGIN') handleLogin();
+    else saveUsername();
+  }
+});
 
 async function initAuth(){
   if (!sb){ usernameInput.placeholder = 'offline'; return; }
@@ -258,6 +266,19 @@ otpVerify.addEventListener('click', handleVerify);
 async function submitRound(summary){
   if (!sb || !sbUser) return;
   try{
+    // Attempt secure RPC submission first
+    const { data: rpcData, error: rpcErr } = await sb.rpc('submit_round', {
+      p_score: summary.score,
+      p_best_dist: summary.bestDist,
+      p_fish_caught: summary.fishCaught,
+      p_catches: summary.catches || [],
+      p_ring2x: !!summary.ring2x,
+      p_lifetime_snaps: summary.lifetimeSnaps || 0
+    });
+    if (!rpcErr) return;
+
+    // Fallback for legacy database schema setup
+    console.warn('submit_round RPC unavailable, using direct table submission', rpcErr);
     const { data: playerRow } = await sb.from('players')
       .select('total_score,best_distance,balls_played').eq('id', sbUser.id).maybeSingle();
     await sb.from('players').update({
@@ -285,7 +306,8 @@ async function submitRound(summary){
     if (summary.catches.some(c=>c.species==='PIKE')) trophyCodes.push('first_pike');
     if (summary.ring2x) trophyCodes.push('double_ring');
     if (summary.bestDist>=150) trophyCodes.push('long_drive_150');
-    if (summary.score>=100) trophyCodes.push('century_score');    if (summary.score>=1000) trophyCodes.push('thousand_score');
+    if (summary.score>=100) trophyCodes.push('century_score');
+    if (summary.score>=1000) trophyCodes.push('thousand_score');
     if (summary.lifetimeSnaps>=5) trophyCodes.push('snap_five');
     if (trophyCodes.length){
       const rows = trophyCodes.map(code=>({ player_id: sbUser.id, trophy_code: code }));

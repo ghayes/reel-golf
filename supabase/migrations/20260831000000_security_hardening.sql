@@ -1,63 +1,27 @@
 -- ============================================================
--- DOCK GOLF — Supabase schema sketch
--- Paste into the Supabase SQL editor (Database → SQL Editor)
+-- REEL GOLF — Security & RLS Hardening Migration
 -- ============================================================
 
--- 1. PLAYERS
--- Supabase Auth already creates a private auth.users table when
--- someone signs up. This table is the public profile that sits
--- next to it — one row per player, keyed to their auth id.
-create table players (
-  id            uuid primary key references auth.users(id) on delete cascade,
-  username      text unique not null,
-  created_at    timestamptz not null default now(),
-  total_score   bigint not null default 0,   -- lifetime sum, for the trophy wall
-  best_distance numeric not null default 0,  -- longest single drive, in yards
-  balls_played  int not null default 0
+-- 1. ENSURE SHOP TABLES & COLUMNS EXIST
+alter table players add column if not exists coins int not null default 0;
+
+create table if not exists shop_items (
+  id          serial primary key,
+  name        text not null,
+  description text,
+  cost        int not null,
+  item_type   text not null, -- 'ROD', 'BAIT', 'SKIN'
+  asset_key   text           -- reference to game asset
 );
 
--- 2. ROUNDS
--- One row per playthrough (a "round" = however many balls you get,
--- e.g. the 3-ball session in the current prototype).
-create table rounds (
-  id           uuid primary key default gen_random_uuid(),
-  player_id    uuid not null references players(id) on delete cascade,
-  score        int not null,
-  fish_caught  int not null default 0,
-  played_at    timestamptz not null default now()
-);
-
--- 3. CATCHES
--- One row per fish actually landed (not every strike — only ones
--- where the fish's stamina hit zero and it made it to the dock).
-create table catches (
-  id           uuid primary key default gen_random_uuid(),
-  player_id    uuid not null references players(id) on delete cascade,
-  round_id     uuid not null references rounds(id) on delete cascade,
-  species      text not null check (species in ('PERCH','BASS','PIKE')),
-  distance_yd  numeric not null,   -- how far out it was hooked
-  bonus_points int not null,
-  caught_at    timestamptz not null default now()
-);
-
--- 4. TROPHIES
--- trophy_defs is your fixed list of badges. player_trophies is the
--- join table recording who has earned which one, and when.
-create table trophy_defs (
-  code        text primary key,          -- e.g. 'first_pike'
-  name        text not null,             -- "First Pike"
-  description text not null,             -- "Land your first pike"
-  icon        text                       -- emoji or asset key, e.g. '🐊'
-);
-
-create table player_trophies (
+create table if not exists player_inventory (
   player_id   uuid not null references players(id) on delete cascade,
-  trophy_code text not null references trophy_defs(code) on delete cascade,
-  earned_at   timestamptz not null default now(),
-  primary key (player_id, trophy_code)
+  item_id     int not null references shop_items(id) on delete cascade,
+  purchased_at timestamptz not null default now(),
+  primary key (player_id, item_id)
 );
 
--- Starter trophy set, tied to things the game can already detect
+-- 2. TROPHY DEFS UPDATE
 insert into trophy_defs (code, name, description, icon) values
   ('first_fish',    'First Bite',        'Land your first fish',                       '🐟'),
   ('first_pike',    'Lunker',            'Land your first pike',                       '🐊'),
@@ -71,22 +35,22 @@ on conflict (code) do update set
   description = excluded.description,
   icon = excluded.icon;
 
--- ============================================================
--- ROW LEVEL SECURITY
--- Everyone can READ public stats (trophy wall / leaderboard).
--- Writes are restricted or executed via secure RPCs.
--- ============================================================
+-- 3. HARDEN PLAYER & INVENTORY RLS POLICIES
 alter table players         enable row level security;
 alter table rounds          enable row level security;
 alter table catches         enable row level security;
 alter table trophy_defs     enable row level security;
 alter table player_trophies enable row level security;
+alter table shop_items      enable row level security;
+alter table player_inventory enable row level security;
 
 drop policy if exists "public read: players" on players;
 drop policy if exists "public read: rounds" on rounds;
 drop policy if exists "public read: catches" on catches;
 drop policy if exists "public read: trophy_defs" on trophy_defs;
 drop policy if exists "public read: trophies" on player_trophies;
+drop policy if exists "public read: shop_items" on shop_items;
+drop policy if exists "self read: inventory" on player_inventory;
 
 drop policy if exists "self insert: players" on players;
 drop policy if exists "self write: players" on players;
@@ -94,12 +58,15 @@ drop policy if exists "self update username: players" on players;
 drop policy if exists "self insert: rounds" on rounds;
 drop policy if exists "self insert: catches" on catches;
 drop policy if exists "self insert: trophies" on player_trophies;
+drop policy if exists "self insert: inventory" on player_inventory;
 
 create policy "public read: players"     on players     for select using (true);
 create policy "public read: rounds"      on rounds      for select using (true);
 create policy "public read: catches"     on catches     for select using (true);
 create policy "public read: trophy_defs" on trophy_defs for select using (true);
 create policy "public read: trophies"    on player_trophies for select using (true);
+create policy "public read: shop_items"  on shop_items  for select using (true);
+create policy "self read: inventory"    on player_inventory for select using (auth.uid() = player_id);
 
 create policy "self insert: players" on players
   for insert with check (auth.uid() = id);
@@ -116,10 +83,10 @@ create policy "self insert: catches" on catches
 create policy "self insert: trophies" on player_trophies
   for insert with check (auth.uid() = player_id);
 
--- ============================================================
--- SECURE SUBMIT ROUND RPC
--- Server-side validation and atomic stat update.
--- ============================================================
+-- Note: Direct client INSERT on player_inventory is intentionally omitted to prevent
+-- players from bypassing purchase_item() RPC to acquire items for free.
+
+-- 4. SECURE SUBMIT ROUND RPC
 create or replace function submit_round(
   p_score int,
   p_best_dist numeric,
@@ -194,10 +161,52 @@ begin
 end;
 $$;
 
--- ============================================================
--- TROPHY WALL VIEW
--- One query the frontend can call directly for the wall/leaderboard.
--- ============================================================
+-- 5. HARDENED PURCHASE RPC
+create or replace function purchase_item(p_item_id int)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+    v_cost int;
+    v_player_id uuid;
+    v_coins int;
+begin
+    v_player_id := auth.uid();
+    if v_player_id is null then
+        raise exception 'Not authenticated';
+    end if;
+
+    -- Check if player already owns the item
+    if exists (select 1 from player_inventory where player_id = v_player_id and item_id = p_item_id) then
+        raise exception 'Item already owned';
+    end if;
+
+    -- Get the cost of the item
+    select cost into v_cost from shop_items where id = p_item_id;
+    if not found then
+        raise exception 'Item not found';
+    end if;
+
+    -- Check player coins
+    select coins into v_coins from players where id = v_player_id;
+    if v_coins is null or v_coins < v_cost then
+        raise exception 'Insufficient coins';
+    end if;
+
+    -- Deduct coins
+    update players
+    set coins = coins - v_cost
+    where id = v_player_id;
+
+    -- Grant the item
+    insert into player_inventory (player_id, item_id)
+    values (v_player_id, p_item_id);
+end;
+$$;
+
+-- 6. TROPHY WALL VIEW UPDATE
 create or replace view trophy_wall as
 select
   p.username,
