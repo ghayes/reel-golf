@@ -576,9 +576,10 @@ async function submitRound(summary){
     // Fallback for legacy database schema setup
     console.warn('submit_round RPC unavailable, using direct table submission', rpcErr);
     const { data: playerRow } = await sb.from('players')
-      .select('total_score,best_distance,balls_played').eq('id', sbUser.id).maybeSingle();
+      .select('total_score,best_distance,balls_played,coins').eq('id', sbUser.id).maybeSingle();
     await sb.from('players').update({
       total_score: (playerRow?.total_score||0) + summary.score,
+      coins: (playerRow?.coins||0) + Math.floor(summary.score / 10),
       best_distance: Math.max(playerRow?.best_distance||0, summary.bestDist),
       balls_played: (playerRow?.balls_played||0) + 3,
     }).eq('id', sbUser.id);
@@ -742,12 +743,13 @@ function gameOver(){
   S.phase='over';
   rulesBlock.classList.add('hidden');
   finalStats.classList.remove('hidden');
+  const earnedCoins = Math.floor(S.score / 10);
   if (sbUser) {
-    playerCoins += S.score;
+    playerCoins += earnedCoins;
     updateCoinDisplays();
   }
   finalStats.innerHTML =
-    `FINAL SCORE <em>${S.score}</em> &middot; +${S.score} 🪙<br>` +
+    `FINAL SCORE <em>${S.score}</em> &middot; +${earnedCoins} 🪙<br>` +
     `LONGEST DRIVE <em>${Math.round(S.bestDist)} yd</em><br>` +
     `FISH LANDED <em>${S.fishCaught}</em>`;
   startBtn.textContent = 'PLAY AGAIN';

@@ -145,10 +145,11 @@ begin
     raise exception 'Not authenticated';
   end if;
 
-  -- Update cumulative player stats atomically
+  -- Update cumulative player stats atomically (1 coin per 10 points)
   update players
   set
     total_score = total_score + p_score,
+    coins = coalesce(coins, 0) + greatest(0, p_score / 10),
     best_distance = greatest(best_distance, p_best_dist),
     balls_played = balls_played + 3
   where id = v_player_id;
