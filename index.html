@@ -56,23 +56,86 @@
   #overlay .rules{max-width:420px;font-family:ui-monospace,Menlo,monospace;font-size:14px;
     line-height:1.75;text-align:left;margin-bottom:26px;}
   #overlay .rules b{color:var(--amber);}
+  #overlayActions{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px;flex-wrap:wrap;}
   #overlay button{
     font-family:inherit;font-size:26px;letter-spacing:.08em;color:var(--pine);
-    background:var(--amber);border:none;border-radius:6px;padding:12px 42px;cursor:pointer;
+    background:var(--amber);border:none;border-radius:6px;padding:12px 36px;cursor:pointer;
   }
+  #overlay button#shopBtn{
+    font-size:20px;padding:12px 24px;color:var(--cream);
+    background:rgba(247,243,231,.12);border:1px solid var(--amber);
+  }
+  #overlay button#shopBtn:hover{background:rgba(255,201,120,.25);}
   #overlay button:focus-visible{outline:3px solid var(--cream);outline-offset:3px;}
   #finalStats{font-family:ui-monospace,Menlo,monospace;font-size:15px;line-height:2;margin-bottom:22px;}
   #finalStats em{color:var(--amber);font-style:normal;}
   #siteNav{display:flex;gap:16px;margin-top:18px;font-family:ui-monospace,Menlo,monospace;
-    font-size:12px;letter-spacing:.08em;text-transform:uppercase;}
+    font-size:12px;letter-spacing:.08em;text-transform:uppercase;flex-wrap:wrap;justify-content:center;}
   #siteNav a{color:rgba(247,243,231,.6);text-decoration:none;border-bottom:1px solid transparent;}
   #siteNav a:hover{color:var(--amber);border-color:var(--amber);}
+
+  #shopOverlay{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;color:var(--cream);background:rgba(7,26,22,.92);
+    padding:16px;z-index:10;
+  }
+  .shop-box{
+    background:var(--pine);border:2px solid var(--amber);border-radius:10px;
+    max-width:520px;width:100%;max-height:85vh;display:flex;flex-direction:column;
+    padding:18px;box-shadow:0 12px 36px rgba(0,0,0,.6);
+  }
+  .shop-header{
+    display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(247,243,231,.2);
+    padding-bottom:10px;margin-bottom:14px;
+  }
+  .shop-header h2{font-size:28px;letter-spacing:.06em;color:var(--amber);margin:0;line-height:1;}
+  .shop-header h2 span{color:var(--cream);}
+  .shop-balance{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--amber);font-weight:bold;}
+  .shop-close-btn{
+    background:none;border:none;color:var(--cream);font-size:26px;cursor:pointer;line-height:1;padding:0 4px;
+    opacity:.75;transition:opacity .2s;
+  }
+  .shop-close-btn:hover{opacity:1;color:var(--rust);}
+  .shop-grid{
+    display:flex;flex-direction:column;gap:8px;overflow-y:auto;padding-right:4px;margin-bottom:10px;
+  }
+  .shop-card{
+    background:rgba(247,243,231,.06);border:1px solid rgba(247,243,231,.18);border-radius:8px;
+    padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  }
+  .shop-card.owned{border-color:rgba(143,191,122,.5);background:rgba(143,191,122,.08);}
+  .shop-info{flex:1;text-align:left;}
+  .shop-info-top{display:flex;align-items:center;gap:8px;margin-bottom:3px;}
+  .shop-item-name{font-size:17px;letter-spacing:.04em;color:var(--cream);}
+  .shop-type-badge{
+    font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+    background:rgba(247,243,231,.15);padding:2px 6px;border-radius:4px;color:var(--amber);
+  }
+  .shop-desc{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:rgba(247,243,231,.7);line-height:1.3;}
+  .shop-action{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+  .shop-cost{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--amber);font-weight:bold;}
+  .shop-buy-btn{
+    font-family:inherit;font-size:13px;letter-spacing:.06em;color:var(--pine);background:var(--amber);
+    border:none;border-radius:5px;padding:5px 12px;cursor:pointer;white-space:nowrap;
+  }
+  .shop-buy-btn:disabled{opacity:.4;cursor:not-allowed;background:rgba(247,243,231,.2);color:var(--cream);}
+  .shop-buy-btn.owned-badge{background:transparent;color:#8FBF7A;border:1px solid #8FBF7A;cursor:default;opacity:1;}
+  #shopMsg{
+    font-family:ui-monospace,Menlo,monospace;font-size:11px;text-align:center;min-height:1.4em;color:#FF9E7A;
+  }
+  #shopMsg.ok{color:#8FBF7A;}
+
   .hidden{display:none !important;}
   @media (max-width: 480px) {
     #overlay{padding:14px 10px;}
     #userRow, #otpRow{gap:4px;}
     #userRow input{width:115px;padding:5px 6px;font-size:13px;}
     #userRow button, #otpRow button{padding:6px 8px;font-size:11px;}
+    #overlay button{font-size:22px;padding:10px 28px;}
+    #overlay button#shopBtn{font-size:18px;padding:10px 18px;}
+    .shop-box{padding:14px;}
+    .shop-header h2{font-size:24px;}
+    .shop-item-name{font-size:15px;}
   }
   @media (prefers-reduced-motion: reduce){ .stamp.show{animation:none;opacity:1;transform:translate(-50%,-50%) rotate(-6deg) scale(1);} }
 </style>
@@ -105,11 +168,30 @@
       Rings on the water = 2&times; that shot. You get <b>3 balls.</b>
     </div>
     <div id="finalStats" class="hidden"></div>
-    <button id="startBtn">TEE UP</button>
+    <div id="overlayActions">
+      <button id="startBtn">TEE UP</button>
+      <button id="shopBtn">PRO SHOP</button>
+    </div>
     <nav id="siteNav">
+      <a href="javascript:void(0)" id="openShopLink">Shop</a>
       <a href="leaderboard.html">Leaderboard</a>
       <a href="trophy-wall.html">Trophy Wall</a>
+      <a href="changelog.html">Changelog</a>
     </nav>
+  </div>
+
+  <div id="shopOverlay" class="hidden">
+    <div class="shop-box">
+      <div class="shop-header">
+        <h2>PRO <span>SHOP</span></h2>
+        <div class="shop-balance">COINS: <span id="shopCoinDisplay">0</span> 🪙</div>
+        <button id="shopCloseBtn" class="shop-close-btn" aria-label="Close Shop">&times;</button>
+      </div>
+      <div id="shopItemList" class="shop-grid">
+        <div style="text-align:center; opacity:0.6; padding:20px; font-family:ui-monospace,monospace;">Loading shop items...</div>
+      </div>
+      <div id="shopMsg"></div>
+    </div>
   </div>
 </div>
 
@@ -120,6 +202,13 @@ const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
 const overlay = document.getElementById('overlay');
 const startBtn = document.getElementById('startBtn');
+const shopBtn = document.getElementById('shopBtn');
+const openShopLink = document.getElementById('openShopLink');
+const shopOverlay = document.getElementById('shopOverlay');
+const shopCloseBtn = document.getElementById('shopCloseBtn');
+const shopItemList = document.getElementById('shopItemList');
+const shopCoinDisplay = document.getElementById('shopCoinDisplay');
+const shopMsg = document.getElementById('shopMsg');
 const rulesBlock = document.getElementById('rulesBlock');
 const finalStats = document.getElementById('finalStats');
 const stampEl = document.getElementById('stamp');
@@ -141,7 +230,7 @@ function resize(){
 }
 window.addEventListener('resize', resize); resize();
 
-// ---------- Supabase (scores / catches / trophies) ----------
+// ---------- Supabase (scores / catches / trophies / shop) ----------
 const SUPABASE_URL = 'https://allwunqurqgdaxjnovhh.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsbHd1bnF1cnFnZGF4am5vdmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNjgwNzUsImV4cCI6MjA5OTY0NDA3NX0.AamB6_7XYRnlPt9XqNxb4MZaU9qyFVPC9CoybQRa-FY';
 let sb = null, sbUser = null;
@@ -156,16 +245,169 @@ function randomUsername(){
 }
 
 let sbUsername = null;
+let playerCoins = 0;
+let playerInventory = new Set();
+let shopCatalog = [];
+
+function hasUpgrade(key){
+  return playerInventory.has(key);
+}
+
+function updateCoinDisplays(){
+  if (shopCoinDisplay) shopCoinDisplay.textContent = playerCoins;
+}
+
+function setShopMsg(text, ok){
+  if (!shopMsg) return;
+  shopMsg.textContent = text;
+  shopMsg.classList.toggle('ok', !!ok);
+}
+
+async function loadShopCatalog(){
+  if (!sb) return;
+  try {
+    const { data, error } = await sb.from('shop_items').select('*').order('cost', { ascending: true });
+    if (!error && data && data.length) {
+      shopCatalog = data;
+    }
+  } catch(e) {
+    console.warn('Failed to load shop catalog', e);
+  }
+}
+
+async function loadPlayerData(){
+  if (!sb || !sbUser) {
+    playerCoins = 0;
+    playerInventory.clear();
+    updateCoinDisplays();
+    return;
+  }
+  try {
+    const [{ data: pData }, { data: invData }] = await Promise.all([
+      sb.from('players').select('coins').eq('id', sbUser.id).maybeSingle(),
+      sb.from('player_inventory').select('item_id, shop_items(asset_key)').eq('player_id', sbUser.id)
+    ]);
+    if (pData && pData.coins !== undefined) playerCoins = pData.coins;
+    playerInventory.clear();
+    if (invData) {
+      for (const row of invData) {
+        if (row.shop_items && row.shop_items.asset_key) {
+          playerInventory.add(row.shop_items.asset_key);
+        }
+      }
+    }
+    updateCoinDisplays();
+  } catch(e) {
+    console.warn('Failed to load player shop data', e);
+  }
+}
+
+function renderShop(){
+  if (!shopItemList) return;
+  updateCoinDisplays();
+  if (!shopCatalog.length) {
+    shopItemList.innerHTML = '<div style="text-align:center; opacity:0.6; padding:20px; font-family:ui-monospace,monospace;">Loading shop items...</div>';
+    return;
+  }
+
+  const icons = {
+    'ROD': '🦯',
+    'LINE': '🧵',
+    'BAIT': '🪱',
+    'REEL': '⚙️',
+    'SKIN': '✨'
+  };
+
+  shopItemList.innerHTML = shopCatalog.map(item => {
+    const owned = playerInventory.has(item.asset_key);
+    const canAfford = sbUser && playerCoins >= item.cost;
+    const icon = icons[item.item_type] || '🎒';
+
+    let btnHtml;
+    if (owned) {
+      btnHtml = '<button class="shop-buy-btn owned-badge" disabled>OWNED ✓</button>';
+    } else if (!sbUser) {
+      btnHtml = '<button class="shop-buy-btn" disabled title="Login to purchase">LOGIN</button>';
+    } else if (canAfford) {
+      btnHtml = `<button class="shop-buy-btn" data-id="${item.id}">BUY</button>`;
+    } else {
+      btnHtml = `<button class="shop-buy-btn" disabled>NEED 🪙</button>`;
+    }
+
+    return `
+      <div class="shop-card ${owned ? 'owned' : ''}">
+        <div class="shop-info">
+          <div class="shop-info-top">
+            <span class="shop-item-name">${icon} ${item.name}</span>
+            <span class="shop-type-badge">${item.item_type}</span>
+          </div>
+          <div class="shop-desc">${item.description || ''}</div>
+        </div>
+        <div class="shop-action">
+          <div class="shop-cost">${item.cost} 🪙</div>
+          ${btnHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  shopItemList.querySelectorAll('button[data-id]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const itemId = parseInt(btn.getAttribute('data-id'), 10);
+      const item = shopCatalog.find(i => i.id === itemId);
+      if (!item) return;
+      btn.disabled = true;
+      btn.textContent = '...';
+      try {
+        const { error } = await sb.rpc('purchase_item', { p_item_id: itemId });
+        if (error) {
+          setShopMsg(error.message, false);
+          btn.disabled = false;
+          btn.textContent = 'BUY';
+          return;
+        }
+        playerCoins -= item.cost;
+        playerInventory.add(item.asset_key);
+        setShopMsg(`Equipped ${item.name}!`, true);
+        toast('UNLOCKED ' + item.name.toUpperCase());
+        renderShop();
+      } catch(err) {
+        console.error('Purchase failed', err);
+        setShopMsg('Purchase failed', false);
+        btn.disabled = false;
+        btn.textContent = 'BUY';
+      }
+    });
+  });
+}
+
+async function openShop(){
+  setShopMsg('', false);
+  shopOverlay.classList.remove('hidden');
+  await loadShopCatalog();
+  await loadPlayerData();
+  renderShop();
+}
+
+function closeShop(){
+  shopOverlay.classList.add('hidden');
+}
+
+if (shopBtn) shopBtn.addEventListener('click', openShop);
+if (openShopLink) openShopLink.addEventListener('click', openShop);
+if (shopCloseBtn) shopCloseBtn.addEventListener('click', closeShop);
 
 async function ensurePlayerRow(){
   if (!sb || !sbUser) return;
-  const { data, error } = await sb.from('players').select('id,username').eq('id', sbUser.id).maybeSingle();
+  const { data, error } = await sb.from('players').select('id,username,coins').eq('id', sbUser.id).maybeSingle();
   if (error){ console.warn('players lookup failed', error); return; }
   if (data){
     sbUsername = data.username;
+    if (data.coins !== undefined) playerCoins = data.coins;
   } else {
     sbUsername = randomUsername();
-    const { error: insErr } = await sb.from('players').insert({ id: sbUser.id, username: sbUsername });
+    playerCoins = 0;
+    const { error: insErr } = await sb.from('players').insert({ id: sbUser.id, username: sbUsername, coins: 0 });
     if (insErr) console.warn('players insert failed', insErr);
   }
 }
@@ -187,6 +429,9 @@ function setAuthState(session){
   } else {
     sbUser = null;
     sbUsername = null;
+    playerCoins = 0;
+    playerInventory.clear();
+    updateCoinDisplays();
     usernameInput.type = 'email';
     usernameInput.value = '';
     usernameInput.placeholder = 'Enter email...';
@@ -217,10 +462,12 @@ async function saveUsername(){
 async function initAuth(){
   if (!sb){ usernameInput.placeholder = 'offline'; return; }
   try{
+    loadShopCatalog();
     const { data:{ session } } = await sb.auth.getSession();
     if (session){
       sbUser = session.user;
       await ensurePlayerRow();
+      await loadPlayerData();
       setAuthState(session);
     } else {
       setAuthState(null);
@@ -236,6 +483,7 @@ if (sb) {
     if (event === 'SIGNED_IN' && session) {
       sbUser = session.user;
       await ensurePlayerRow();
+      await loadPlayerData();
       setAuthState(session);
     } else if (event === 'SIGNED_OUT') {
       setAuthState(null);
@@ -275,6 +523,7 @@ async function handleVerify() {
   if (error) { setUserMsg(error.message, false); return; }
   sbUser = data.user;
   await ensurePlayerRow();
+  await loadPlayerData();
   otpRow.classList.add("hidden");
   usernameInput.classList.remove("hidden");
   usernameSave.classList.remove("hidden");
@@ -450,7 +699,8 @@ function contact(){
     const chance = (p-85)/15 * 0.85;
     if (Math.random() < chance){ return snapLine('SWUNG TOO HARD'); }
   }
-  const speed = 190 + Math.pow(p/100, 1.25) * 560;   // px/s
+  const rodMult = hasUpgrade('graphite_rod') ? 1.10 : 1.0;
+  const speed = (190 + Math.pow(p/100, 1.25) * 560) * rodMult;   // px/s
   const ang = -Math.PI/4.4;
   S.ball.x = DOCK_X; S.ball.y = 30;  // tee height above water
   S.ball.vx = Math.cos(ang)*speed;
@@ -490,8 +740,12 @@ function gameOver(){
   S.phase='over';
   rulesBlock.classList.add('hidden');
   finalStats.classList.remove('hidden');
+  if (sbUser) {
+    playerCoins += S.score;
+    updateCoinDisplays();
+  }
   finalStats.innerHTML =
-    `FINAL SCORE <em>${S.score}</em><br>` +
+    `FINAL SCORE <em>${S.score}</em> &middot; +${S.score} 🪙<br>` +
     `LONGEST DRIVE <em>${Math.round(S.bestDist)} yd</em><br>` +
     `FISH LANDED <em>${S.fishCaught}</em>`;
   startBtn.textContent = 'PLAY AGAIN';
@@ -594,18 +848,21 @@ function update(dt){
     const lf = S.fish;   // live reference (may have dropped this frame)
     if (S.holding){
       const drag = (lf && lf.st>0 && lf.mode==='run') ? 0.15 : 1;
-      S.lineOutYd -= 9.5 * drag * dt;
+      const reelSpeed = hasUpgrade('titanium_reel') ? 11.5 : 9.5;
+      S.lineOutYd -= reelSpeed * drag * dt;
     }
     // hook check: chance per yard reeled, only if no fish yet
-    if (!lf && S.holding && Math.random() < dt*0.22 && S.lineOutYd > 8){
+    const biteRate = hasUpgrade('super_bait') ? 0.28 : 0.22;
+    if (!lf && S.holding && Math.random() < dt*biteRate && S.lineOutYd > 8){
       S.fish = makeFish(S.distYd);
       toast('SOMETHING GRABBED IT');
     }
     // tired fish adds weight
     if (lf && lf.st<=0 && S.holding) S.tension += 8*dt;
 
+    const maxTension = hasUpgrade('braided_line') ? 120 : 100;
     S.tension = Math.max(6, S.tension);
-    if (S.tension >= 100) return snapLine(lf? 'THE '+lf.name+' BROKE OFF' : 'REELED TOO HOT');
+    if (S.tension >= maxTension) return snapLine(lf? 'THE '+lf.name+' BROKE OFF' : 'REELED TOO HOT');
 
     if (S.lineOutYd <= 0){
       // fish still green? it thrashes at the dock
@@ -784,9 +1041,36 @@ function draw(){
     ctx.closePath(); ctx.fill();
   }
 
+  // ball trail for neon ball
+  if (hasUpgrade('neon_ball') && S.phase === 'flight') {
+    if (!S.trail) S.trail = [];
+    S.trail.push({ x: bsx, y: bsy });
+    if (S.trail.length > 10) S.trail.shift();
+  } else if (S.phase !== 'flight') {
+    S.trail = [];
+  }
+  if (S.trail && S.trail.length) {
+    for (let i = 0; i < S.trail.length; i++) {
+      const pt = S.trail[i];
+      const a = ((i + 1) / S.trail.length) * 0.45;
+      ctx.fillStyle = `rgba(57, 255, 20, ${a})`;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, BALL_R * (0.3 + 0.7 * (i / S.trail.length)), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
   // ball
-  ctx.fillStyle='#F7F3E7';
+  if (hasUpgrade('neon_ball')) {
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#39FF14';
+    ctx.fillStyle = '#39FF14';
+  } else {
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#F7F3E7';
+  }
   ctx.beginPath(); ctx.arc(bsx, bsy, BALL_R, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
 
   drawHUD(wy);
 }
@@ -848,7 +1132,8 @@ function drawHUD(wy){
     const mw=Math.min(340,W-80), mx=(W-mw)/2, my=H-64;
     ctx.fillStyle='rgba(7,26,22,.7)'; roundRect(mx-6,my-6,mw+12,26,8); ctx.fill();
     ctx.fillStyle='rgba(247,243,231,.18)'; ctx.fillRect(mx,my,mw,14);
-    const t=Math.min(1,S.tension/100);
+    const maxTension = hasUpgrade('braided_line') ? 120 : 100;
+    const t=Math.min(1,S.tension/maxTension);
     ctx.fillStyle = t>0.85 ? '#FF6B4A' : t>0.6 ? '#E08A4E' : '#7FA65A';
     ctx.fillRect(mx,my,mw*t,14);
     ctx.fillStyle='rgba(247,243,231,.85)'; ctx.font='13px ui-monospace,monospace';

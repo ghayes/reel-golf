@@ -6,17 +6,30 @@
 <link href="https://fonts.googleapis.com/css2?family=Staatliches&display=swap" rel="stylesheet">
 <style>
   :root{ --pine:#16281F; --amber:#FFC978; --cream:#F7F3E7; }
-  body{ background:var(--pine); color:var(--cream); font-family:'Staatliches',sans-serif; padding:40px; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{ background:var(--pine); color:var(--cream); font-family:'Staatliches',sans-serif; padding:40px 20px; }
   .wrap{ max-width:600px; margin:0 auto; }
-  h1{ color:var(--amber); margin-bottom:30px; }
-  .entry{ border-left:4px solid var(--amber); padding-left:20px; margin-bottom:20px; }
-  .title{ font-size:20px; }
-  .date{ font-size:12px; opacity:0.6; }
+  h1{ font-size:min(14vw,54px); letter-spacing:.06em; color:var(--amber); text-align:center; line-height:.95; margin-bottom:14px; }
+  h1 span{ color:var(--cream); }
+  nav{ display:flex; justify-content:center; gap:18px; margin:0 0 34px;
+    font-family:ui-monospace,Menlo,monospace; font-size:12px; letter-spacing:.1em;
+    text-transform:uppercase; }
+  nav a{ color:rgba(247,243,231,.65); text-decoration:none; border-bottom:1px solid transparent; }
+  nav a:hover, nav a.active{ color:var(--amber); border-color:var(--amber); }
+  .entry{ border-left:4px solid var(--amber); padding-left:20px; margin-bottom:20px; font-family:ui-monospace,Menlo,monospace; }
+  .title{ font-size:18px; font-family:'Staatliches',sans-serif; letter-spacing:.04em; color:var(--cream); }
+  .date{ font-size:12px; opacity:0.6; margin-top:2px; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>FEATURE LOG</h1>
+  <h1>REEL GOLF <span>FEATURE LOG</span></h1>
+  <nav>
+    <a href="index.html">Play</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="trophy-wall.html">Trophy Wall</a>
+    <a href="changelog.html" class="active">Changelog</a>
+  </nav>
   <div id="logs">Loading features...</div>
 </div>
 <script>
