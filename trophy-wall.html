@@ -6,6 +6,7 @@
 <title>Reel Golf — Trophy Wall</title>
 <link href="https://fonts.googleapis.com/css2?family=Staatliches&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="api.js"></script>
 <style>
   :root{
     --pine:#16281F; --water:#0F4C52; --deep:#072E33;
@@ -82,12 +83,10 @@
 </div>
 <script>
 (async () => {
-  const SUPABASE_URL = 'https://allwunqurqgdaxjnovhh.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsbHd1bnF1cnFnZGF4am5vdmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNjgwNzUsImV4cCI6MjA5OTY0NDA3NX0.AamB6_7XYRnlPt9XqNxb4MZaU9qyFVPC9CoybQRa-FY';
   const content = document.getElementById('content');
   function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
   try {
-    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const sb = window.RG_API?.sb || window.sb;
     const [{ data: defs, error: defErr }, { data: wall, error: wallErr }, { data: history, error: histErr }] = await Promise.all([
       sb.from('trophy_defs').select('code,name,description,icon'),
       sb.from('trophy_wall').select('username,total_score,best_distance,total_catches,pikes_landed,trophies'),
