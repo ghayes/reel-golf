@@ -30,7 +30,7 @@
   // ---------- world constants ----------
   const YARD = 9;                 // px per yard (world units)
   const DOCK_X = 60;              // tee position (world x)
-  const MAX_LINE_YD = 175;        // spool capacity
+  const MAX_LINE_YD = 225;        // spool capacity
   const GRAV = 420;               // px/s^2
   const BALL_R = 5;
 
