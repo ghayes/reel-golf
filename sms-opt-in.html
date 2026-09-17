@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reel Golf — SMS Verification & Account Sign-In</title>
+<link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pine: #16281F;
+    --dark-lake: #0B1914;
+    --amber: #FFC978;
+    --cream: #F7F3E7;
+    --rust: #D96B43;
+    --border: rgba(255, 201, 120, 0.25);
+    --card-bg: #FFFFFF;
+    --card-text: #1E293B;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0f1c16;
+    color: var(--cream);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    padding: 30px 16px 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+  .wrap {
+    width: 100%;
+    max-width: 580px;
+  }
+  .brand-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .brand-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    background: #16281F;
+    border: 2px solid var(--amber);
+    border-radius: 12px;
+    font-size: 28px;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  h1 {
+    font-family: 'Staatliches', sans-serif;
+    font-size: clamp(32px, 6vw, 44px);
+    letter-spacing: .06em;
+    color: var(--amber);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  h1 span { color: var(--cream); }
+  .brand-tag {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 13px;
+    color: rgba(247, 243, 231, 0.7);
+    letter-spacing: .04em;
+  }
+  nav {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin: 16px 0 28px;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    flex-wrap: wrap;
+  }
+  nav a {
+    color: rgba(247, 243, 231, 0.65);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    padding-bottom: 2px;
+  }
+  nav a:hover, nav a.active {
+    color: var(--amber);
+    border-color: var(--amber);
+  }
+
+  /* Form Container */
+  .form-card {
+    background: #FFFFFF;
+    color: #1E293B;
+    border-radius: 14px;
+    padding: 36px 32px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+  .form-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .form-subtitle {
+    font-size: 14px;
+    color: #64748B;
+    text-align: center;
+    margin-bottom: 28px;
+    line-height: 1.4;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+  .form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 8px;
+  }
+  .phone-input {
+    width: 100%;
+    padding: 13px 16px;
+    font-size: 16px;
+    font-family: inherit;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 8px;
+    background: #F8FAFC;
+    color: #0F172A;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .phone-input:focus {
+    outline: none;
+    border-color: #2563EB;
+    background: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  }
+
+  .method-group {
+    margin-bottom: 24px;
+  }
+  .method-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .method-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #334155;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .method-option input[type="radio"] {
+    width: 17px;
+    height: 17px;
+    accent-color: #2563EB;
+    cursor: pointer;
+  }
+
+  /* Consent Checkbox Box */
+  .consent-box {
+    background: #F8FAFC;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 16px 16px 16px 14px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .consent-checkbox {
+    margin-top: 3px;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    cursor: pointer;
+    accent-color: #2563EB;
+  }
+  .consent-text {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #334155;
+  }
+  .consent-text strong {
+    color: #0F172A;
+  }
+  .consent-text a {
+    color: #2563EB;
+    text-decoration: underline;
+    font-weight: 600;
+  }
+  .consent-text a:hover {
+    color: #1D4ED8;
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #FFFFFF;
+    background: #2563EB;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .submit-btn:hover {
+    background: #1D4ED8;
+  }
+  .submit-btn:active {
+    transform: scale(0.99);
+  }
+
+  .card-footer {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #F1F5F9;
+    font-size: 12px;
+    color: #64748B;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .support-note {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 13px;
+    color: rgba(247, 243, 231, 0.65);
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .support-note a {
+    color: var(--amber);
+    text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand-header">
+    <div class="brand-logo">🎣</div>
+    <h1>REEL <span>GOLF</span></h1>
+    <div class="brand-tag">Lakeside Golf & Fishing Game &middot; app.reel-golf.com</div>
+  </div>
+
+  <nav>
+    <a href="index.html">Play</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="trophy-wall.html">Trophy Wall</a>
+    <a href="changelog.html">Changelog</a>
+    <a href="sms-opt-in.html" class="active">SMS Sign-In</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="terms.html">Terms</a>
+  </nav>
+
+  <div class="form-card">
+    <div class="form-title">Enable SMS Authentication</div>
+    <div class="form-subtitle">Enter your mobile phone number to sign in or save your gameplay stats across devices.</div>
+
+    <form id="smsForm" onsubmit="event.preventDefault(); alert('Verification code sent if valid phone number provided.');">
+      <div class="form-group">
+        <label class="form-label" for="phoneInput">Mobile Phone Number</label>
+        <input
+          type="tel"
+          id="phoneInput"
+          class="phone-input"
+          placeholder="(555) 123-4567"
+          autocomplete="tel"
+          required
+        >
+      </div>
+
+      <div class="method-group">
+        <label class="form-label">Verification Method</label>
+        <div class="method-options">
+          <label class="method-option">
+            <input type="radio" name="verification_method" value="sms" checked>
+            <span>SMS Text Message (One-Time Passcode)</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="consent-box">
+        <input
+          type="checkbox"
+          id="smsConsent"
+          class="consent-checkbox"
+          name="sms_consent"
+          required
+        >
+        <label for="smsConsent" class="consent-text">
+          By providing your phone number and checking this box, you agree to receive one-time authentication passcodes and account security notifications by SMS from <strong>Reel Golf</strong>. Consent is not a condition of play or purchase. Msg &amp; data rates may apply. Msg frequency is as requested. Reply <strong>STOP</strong> to opt out. Reply <strong>HELP</strong> for help or email us at <a href="mailto:support@reel-golf.com">support@reel-golf.com</a>. No mobile information will be sold or shared with third parties for promotional or marketing purposes. View our <a href="https://app.reel-golf.com/privacy.html" target="_blank">Privacy Policy</a> and <a href="https://app.reel-golf.com/terms.html" target="_blank">Terms of Service</a>.
+        </label>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">
+        Send Verification Code
+      </button>
+
+      <div class="card-footer">
+        Strict 10DLC compliance: Consent is voluntary and distinct to SMS. Checkboxes are never pre-selected.
+      </div>
+    </form>
+  </div>
+
+  <div class="support-note">
+    Questions or need help? Reach us at <a href="mailto:support@reel-golf.com">support@reel-golf.com</a>
+  </div>
+</div>
+</body>
+</html>
