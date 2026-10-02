@@ -37,3 +37,14 @@ Losing all balls (`S.balls`) triggers `gameOver()`, which repopulates the start 
 **Rendering** is all hand-drawn Canvas 2D in `draw()`: parallax pine trees, gradient sky/water, a stick-figure golfer whose club/arm angles are computed live from swing phase (`clubA`), the fishing line as a sagging/vibrating quadratic curve tied to `S.tension`, and a HUD (`drawHUD()`) with score, wind, distance, power/tension meters, and toast messages.
 
 Input is unified across pointer and keyboard: `pointerdown`/`pointerup` on the canvas/window and `Space` keydown/keyup both map to the same `press()`/`release()` handlers, so any change to controls should go through those two functions rather than adding new listeners.
+
+## Change Management & Code Review Workflow
+
+Every code change must go through a collaborative review loop with the `code-reviewer` subagent:
+1. **Branch & Implement**: Work on a scoped feature or fix branch (`feat/...`, `fix/...`, `infra/...`).
+2. **Open PR**: Push branch and create a Pull Request linked to the relevant issue(s) using `gh pr create`.
+3. **Subagent Review**: Invoke the `code-reviewer` subagent to review the PR diff, check project conventions, verify security, and post structured review comments directly to the GitHub PR.
+4. **Iterative Collaboration (Max 4 Iterations)**: If the reviewer requests changes (`STATUS: CHANGES REQUESTED`), the coding agent implements the requested fixes, pushes new commits, and asks the reviewer to re-review. This loop can repeat for up to 4 iterations.
+5. **Human Review Escalation Gate**: If after 4 review/fix iterations the PR is still not approved (`STATUS: HUMAN REVIEW REQUIRED`), the agents must stop immediately, explain the unresolved issues to the user, and wait for human review and direction.
+6. **Green Light**: Once the reviewer determines all criteria are satisfied, the reviewer posts an approval to the PR and issues `STATUS: GREEN LIGHT`. Merging is only performed after the green light is granted.
+
