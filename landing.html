@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reel Golf — Drive It Far. Reel It In.</title>
+<meta name="description" content="Reel Golf is a free mobile browser game combining golf driving range physics with real-time fishing minigames. No download required.">
+<meta property="og:title" content="Reel Golf — Drive It Far. Reel It In.">
+<meta property="og:description" content="A little golf. A little fishing. Play instantly in your mobile or desktop browser.">
+<meta property="og:image" content="https://app.reel-golf.com/sms-opt-in-form.png">
+<meta property="og:url" content="https://reel-golf.com">
+<meta name="theme-color" content="#16281F">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pine: #16281F;
+    --dark-pine: #0A1611;
+    --water: #0F4C52;
+    --deep-water: #072E33;
+    --amber: #FFC978;
+    --cream: #F7F3E7;
+    --rust: #D96B43;
+    --card-bg: rgba(22, 40, 31, 0.7);
+    --border: rgba(255, 201, 120, 0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: radial-gradient(circle at 50% 20%, #1a382b 0%, #0d1a14 55%, #07100c 100%);
+    color: var(--cream);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    line-height: 1.5;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 960px;
+    padding: 0 20px;
+  }
+
+  /* Header */
+  header {
+    width: 100%;
+    padding: 24px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 201, 120, 0.15);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+  }
+
+  .brand-icon {
+    width: 44px;
+    height: 44px;
+    background: var(--pine);
+    border: 2px solid var(--amber);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+
+  .brand-text {
+    font-family: 'Staatliches', sans-serif;
+    font-size: 28px;
+    letter-spacing: .06em;
+    color: var(--amber);
+    line-height: 1;
+  }
+
+  .brand-text span { color: var(--cream); }
+
+  .header-cta {
+    font-family: 'Staatliches', sans-serif;
+    font-size: 18px;
+    letter-spacing: .06em;
+    color: var(--pine);
+    background: var(--amber);
+    text-decoration: none;
+    padding: 8px 20px;
+    border-radius: 6px;
+    transition: transform .15s ease, background-color .15s ease;
+  }
+
+  .header-cta:hover {
+    background: #ffd699;
+    transform: translateY(-1px);
+  }
+
+  /* Hero Section */
+  .hero {
+    text-align: center;
+    padding: 60px 0 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 201, 120, 0.12);
+    border: 1px solid var(--border);
+    color: var(--amber);
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 20px;
+    margin-bottom: 22px;
+  }
+
+  .hero h1 {
+    font-family: 'Staatliches', sans-serif;
+    font-size: clamp(48px, 9vw, 92px);
+    line-height: 0.95;
+    letter-spacing: .04em;
+    color: var(--amber);
+    margin-bottom: 20px;
+  }
+
+  .hero h1 span {
+    color: var(--cream);
+    display: block;
+  }
+
+  .hero-p {
+    font-size: clamp(16px, 2.5vw, 20px);
+    color: rgba(247, 243, 231, 0.85);
+    max-width: 620px;
+    margin-bottom: 34px;
+    font-weight: 400;
+  }
+
+  .play-btn-large {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: var(--amber);
+    color: var(--pine);
+    font-family: 'Staatliches', sans-serif;
+    font-size: clamp(24px, 4vw, 32px);
+    letter-spacing: .08em;
+    padding: 16px 44px;
+    border-radius: 10px;
+    text-decoration: none;
+    box-shadow: 0 10px 28px rgba(255, 201, 120, 0.35);
+    transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+  }
+
+  .play-btn-large:hover {
+    background: #ffd699;
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 14px 36px rgba(255, 201, 120, 0.45);
+  }
+
+  .play-btn-large:active {
+    transform: translateY(1px);
+  }
+
+  .hero-meta {
+    margin-top: 16px;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 13px;
+    color: rgba(247, 243, 231, 0.6);
+    letter-spacing: .04em;
+  }
+
+  /* Gameplay Cards */
+  .grid-section {
+    padding: 30px 0 60px;
+  }
+
+  .section-title {
+    text-align: center;
+    font-family: 'Staatliches', sans-serif;
+    font-size: 34px;
+    letter-spacing: .06em;
+    color: var(--cream);
+    margin-bottom: 32px;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 30px 24px;
+    backdrop-filter: blur(8px);
+    transition: transform .2s ease, border-color .2s ease;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255, 201, 120, 0.6);
+  }
+
+  .card-icon {
+    font-size: 38px;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-family: 'Staatliches', sans-serif;
+    font-size: 24px;
+    letter-spacing: .04em;
+    color: var(--amber);
+    margin-bottom: 10px;
+  }
+
+  .card-desc {
+    font-size: 15px;
+    color: rgba(247, 243, 231, 0.8);
+    line-height: 1.6;
+    flex-grow: 1;
+  }
+
+  /* Mechanics / How to play */
+  .how-to-play {
+    background: rgba(7, 46, 51, 0.45);
+    border: 1px solid rgba(255, 201, 120, 0.2);
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin: 20px 0 60px;
+    text-align: center;
+  }
+
+  .how-to-play h3 {
+    font-family: 'Staatliches', sans-serif;
+    font-size: 30px;
+    color: var(--amber);
+    letter-spacing: .06em;
+    margin-bottom: 16px;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+    text-align: left;
+    margin-top: 24px;
+  }
+
+  .step {
+    border-left: 2px solid var(--amber);
+    padding-left: 14px;
+  }
+
+  .step-num {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+    color: var(--amber);
+    font-weight: bold;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .step-txt {
+    font-size: 14px;
+    color: rgba(247, 243, 231, 0.85);
+  }
+
+  /* Call to Action Banner */
+  .cta-banner {
+    text-align: center;
+    padding: 50px 20px;
+    margin-bottom: 40px;
+    background: linear-gradient(180deg, rgba(22, 40, 31, 0.4) 0%, rgba(7, 26, 22, 0.8) 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+
+  .cta-banner h2 {
+    font-family: 'Staatliches', sans-serif;
+    font-size: clamp(32px, 6vw, 48px);
+    letter-spacing: .04em;
+    color: var(--cream);
+    margin-bottom: 12px;
+  }
+
+  .cta-banner p {
+    font-size: 16px;
+    color: rgba(247, 243, 231, 0.75);
+    margin-bottom: 26px;
+  }
+
+  /* Footer */
+  footer {
+    width: 100%;
+    border-top: 1px solid rgba(255, 201, 120, 0.15);
+    padding: 36px 0 48px;
+    margin-top: auto;
+    text-align: center;
+  }
+
+  .footer-nav {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .footer-nav a {
+    color: rgba(247, 243, 231, 0.65);
+    text-decoration: none;
+    transition: color .15s ease;
+  }
+
+  .footer-nav a:hover {
+    color: var(--amber);
+  }
+
+  .copy {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+    color: rgba(247, 243, 231, 0.4);
+    letter-spacing: .04em;
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 18px 0; }
+    .hero { padding: 40px 0 32px; }
+    .how-to-play { padding: 28px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <a href="https://reel-golf.com" class="brand">
+      <div class="brand-icon">⛳</div>
+      <div class="brand-text">REEL <span>GOLF</span></div>
+    </a>
+    <a href="https://app.reel-golf.com" class="header-cta">PLAY NOW</a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="badge">🌲 Browser Game &bull; Instant Play</div>
+      <h1>DRIVE IT FAR.<span>REEL IT IN.</span></h1>
+      <p class="hero-p">The addictive mobile game blending long-drive golf swing physics with heart-pounding line-tension fishing. Zero install, zero lag, directly in your browser.</p>
+      
+      <a href="https://app.reel-golf.com" class="play-btn-large">
+        PLAY REEL GOLF NOW ⛳
+      </a>
+      <div class="hero-meta">Free to play on iOS Safari, Android Chrome, and Desktop</div>
+    </section>
+
+    <section class="grid-section">
+      <h2 class="section-title">THE GAMEPLAY LOOP</h2>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon">🏌️‍♂️</div>
+          <h3 class="card-title">1. The Tee Shot</h3>
+          <p class="card-desc">Hold to charge power. Time your release to launch your golf ball soaring over the pine trees and lake. Watch out for the red zone—swing too hard and you'll snap the line on contact!</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🐟</div>
+          <h3 class="card-title">2. The Catch & Reel</h3>
+          <p class="card-desc">Splashdown! Hook Perch, Bass, or the elusive trophy Pike. Hold to reel when the fish is resting, but release when it runs. Keep line tension balanced or your prize will break free.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🏆</div>
+          <h3 class="card-title">3. Upgrades & Leaderboards</h3>
+          <p class="card-desc">Bank yardage and fish bonuses for Coins at the dock. Upgrade your Rod, Reel, Golf Balls, and Boat in the Pro Shop to cast farther, fight tougher fish, and conquer the global leaderboard.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="how-to-play">
+      <h3>ONE-TOUCH ARCADE CONTROLS</h3>
+      <p style="color: rgba(247, 243, 231, 0.8); max-width: 540px; margin: 0 auto 20px; font-size: 15px;">Designed for quick, satisfying sessions anywhere—no virtual joysticks or complicated button layouts.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">Step 1</div>
+          <div class="step-txt">Tap & hold anywhere (or hold Space) to charge your backswing meter. Release to launch.</div>
+        </div>
+        <div class="step">
+          <div class="step-num">Step 2</div>
+          <div class="step-txt">Land inside floating target rings to double your yardage bonus.</div>
+        </div>
+        <div class="step">
+          <div class="step-num">Step 3</div>
+          <div class="step-txt">Reel in the line. Hold to pull, release when the tension gauge spikes.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-banner">
+      <h2>READY TO CAST OFF?</h2>
+      <p>Jump right onto the dock. No account needed to start playing, or sign in to save your coins and trophy collection.</p>
+      <a href="https://app.reel-golf.com" class="play-btn-large">
+        LAUNCH GAME 🎣
+      </a>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="container">
+    <nav class="footer-nav">
+      <a href="https://app.reel-golf.com">Play Game</a>
+      <a href="https://app.reel-golf.com/leaderboard">Leaderboard</a>
+      <a href="https://app.reel-golf.com/trophy-wall">Trophy Wall</a>
+      <a href="https://app.reel-golf.com/changelog">Changelog</a>
+      <a href="https://app.reel-golf.com/privacy">Privacy Policy</a>
+      <a href="https://app.reel-golf.com/terms">Terms of Service</a>
+      <a href="https://app.reel-golf.com/sms-opt-in">SMS Opt-In</a>
+    </nav>
+    <p class="copy">&copy; Reel Golf. All rights reserved.</p>
+  </div>
+</footer>
+
+</body>
+</html>
