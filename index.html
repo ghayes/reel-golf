@@ -6,8 +6,8 @@
 <title>Reel Golf — Prototype</title>
 <link href="https://fonts.googleapis.com/css2?family=Staatliches&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="api.js?v=20261003"></script>
-<script src="game.js?v=20261003" defer></script>
+<script src="api.js?v=20261003b"></script>
+<script src="game.js?v=20261003b" defer></script>
 <style>
   :root{
     --pine:#16281F; --water:#0F4C52; --deep:#072E33;
@@ -304,19 +304,23 @@
     setUserMsg('', false);
   }
 
-  function setAuthState(session) {
+  async function setAuthState(session) {
     const api = window.RG_API;
     clearInterval(resendTimer);
     otpRow.classList.add('hidden');
 
     if (session && session.user && api) {
+      if (!api.username) {
+        await api.ensurePlayerRow();
+        await api.loadPlayerData();
+      }
       authTabs.classList.add('hidden');
       phoneConsentRow.classList.add('hidden');
       phoneInput.classList.add('hidden');
       emailInput.classList.add('hidden');
       usernameInput.classList.remove('hidden');
       usernameInput.type = 'text';
-      usernameInput.value = api.username || session.user.phone || session.user.email || '';
+      usernameInput.value = api.username || session.user.email || 'Player';
       usernameInput.placeholder = 'Your username';
       usernameSave.textContent = 'SAVE';
       authLabel.classList.remove('hidden');
@@ -459,8 +463,11 @@
         setUserMsg(res.error.message, false);
         return;
       }
+      if (api.syncUser && (res.data.session || res.data.user)) {
+        await api.syncUser(res.data.session || { user: res.data.user });
+      }
       clearInterval(resendTimer);
-      setAuthState(res.data.session || { user: res.data.user });
+      await setAuthState(res.data.session || { user: res.data.user });
       setUserMsg('Logged in!', true);
     } catch (err) {
       setUserMsg(err.message, false);
@@ -641,7 +648,11 @@
   phoneInput.addEventListener('input', () => {
     const val = phoneInput.value;
     if (val.startsWith('+')) return;
-    const digits = val.replace(/\D/g, '').slice(0, 10);
+    let digits = val.replace(/\D/g, '');
+    if (digits.length > 10 && digits.startsWith('1')) {
+      digits = digits.slice(1);
+    }
+    digits = digits.slice(0, 10);
     if (digits.length === 0) {
       phoneInput.value = '';
     } else if (digits.length <= 3) {
