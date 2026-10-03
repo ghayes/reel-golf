@@ -259,34 +259,24 @@
       this.username = newName;
     },
 
+    async syncUser(session) {
+      if (session && session.user) {
+        this.user = session.user;
+        await this.ensurePlayerRow();
+        await this.loadPlayerData();
+      } else {
+        this.user = null;
+        this.username = null;
+        this.coins = 0;
+        this.inventory.clear();
+      }
+    },
+
     initAuth(onAuthChange) {
       if (!sb) return;
 
-      sb.auth.getSession().then(async ({ data: { session } }) => {
-        if (session && session.user) {
-          this.user = session.user;
-          await this.ensurePlayerRow();
-          await this.loadPlayerData();
-        } else {
-          this.user = null;
-          this.username = null;
-          this.coins = 0;
-          this.inventory.clear();
-        }
-        if (onAuthChange) onAuthChange(session);
-      });
-
       sb.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session && session.user) {
-          this.user = session.user;
-          await this.ensurePlayerRow();
-          await this.loadPlayerData();
-        } else if (event === 'SIGNED_OUT') {
-          this.user = null;
-          this.username = null;
-          this.coins = 0;
-          this.inventory.clear();
-        }
+        await this.syncUser(session);
         if (onAuthChange) onAuthChange(session);
       });
     }
