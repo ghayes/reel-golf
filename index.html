@@ -41,19 +41,33 @@
   #overlay h1 span{color:var(--cream);}
   #overlay .tag{font-family:ui-monospace,Menlo,monospace;font-size:13px;opacity:.75;
     letter-spacing:.12em;text-transform:uppercase;margin:6px 0 22px;}
-  #userRow, #otpRow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;margin:-10px 0 18px;
+  .auth-tabs{display:flex;align-items:center;justify-content:center;gap:4px;margin:-10px 0 10px;
+    background:rgba(247,243,231,.08);padding:3px;border-radius:6px;border:1px solid rgba(247,243,231,.18);}
+  .auth-tab{font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.05em;padding:4px 10px;
+    background:transparent;color:rgba(247,243,231,.7);border:none;border-radius:4px;cursor:pointer;transition:all .15s ease;}
+  .auth-tab.active{background:var(--amber);color:var(--pine);font-weight:bold;}
+  .auth-tab:hover:not(.active){color:var(--cream);background:rgba(247,243,231,.15);}
+  #userRow, #otpRow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;margin:0 0 10px;
     font-family:ui-monospace,Menlo,monospace;font-size:13px;max-width:100%;}
   #userRow label{opacity:.7;white-space:nowrap;}
   #userRow input, #otpRow input{font:inherit;font-size:14px;color:var(--cream);background:rgba(247,243,231,.08);
-    border:1px solid rgba(247,243,231,.35);border-radius:5px;padding:5px 8px;width:130px;max-width:100%;box-sizing:border-box;}
-  #otpRow input{width:110px;text-align:center;letter-spacing:.08em;}
+    border:1px solid rgba(247,243,231,.35);border-radius:5px;padding:5px 8px;width:140px;max-width:100%;box-sizing:border-box;}
+  #otpRow input{width:115px;text-align:center;letter-spacing:.12em;font-weight:bold;}
   #userRow input:focus-visible, #otpRow input:focus-visible{outline:2px solid var(--amber);}
   #userRow button, #otpRow button{font:inherit;font-size:12px;letter-spacing:.06em;color:var(--pine);
     background:var(--amber);border:none;border-radius:5px;padding:6px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
   #userRow button#logoutBtn{background:rgba(247,243,231,.15);color:var(--cream);border:1px solid rgba(247,243,231,.3);}
   #userRow button#logoutBtn:hover{background:rgba(196,80,46,.4);border-color:var(--rust);}
+  #otpRow button#resendOtpBtn{background:rgba(247,243,231,.15);color:var(--cream);border:1px solid rgba(247,243,231,.3);font-size:11px;padding:6px 8px;}
+  #otpRow button#resendOtpBtn:disabled{opacity:.45;cursor:not-allowed;}
+  #otpRow button#cancelOtpBtn{background:transparent;color:rgba(247,243,231,.6);border:1px solid rgba(247,243,231,.2);font-size:14px;padding:4px 8px;line-height:1;}
+  #otpRow button#cancelOtpBtn:hover{color:var(--rust);border-color:var(--rust);}
+  .consent-row{display:flex;align-items:flex-start;justify-content:center;gap:6px;max-width:380px;margin:-4px auto 10px;
+    padding:0 8px;font-family:ui-monospace,Menlo,monospace;font-size:10px;line-height:1.35;color:rgba(247,243,231,.7);text-align:left;}
+  .consent-check{margin-top:2px;accent-color:var(--amber);cursor:pointer;width:14px;height:14px;flex-shrink:0;}
+  .consent-text a{color:var(--amber);text-decoration:underline;}
   #userMsg{font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.04em;
-    margin:-14px 0 18px;min-height:1.4em;color:#FF9E7A;}
+    margin:-4px 0 16px;min-height:1.4em;color:#FF9E7A;}
   #userMsg.ok{color:#8FBF7A;}
   #overlay .rules{max-width:420px;font-family:ui-monospace,Menlo,monospace;font-size:14px;
     line-height:1.75;text-align:left;margin-bottom:26px;}
@@ -130,9 +144,12 @@
   .hidden{display:none !important;}
   @media (max-width: 480px) {
     #overlay{padding:14px 10px;}
-    #userRow, #otpRow{gap:4px;}
-    #userRow input{width:115px;padding:5px 6px;font-size:13px;}
-    #userRow button, #otpRow button{padding:6px 8px;font-size:11px;}
+    .auth-tab{padding:3px 8px;font-size:10px;}
+    .consent-row{font-size:9.5px;max-width:310px;margin-bottom:8px;}
+    #userRow, #otpRow{gap:4px;margin-bottom:6px;}
+    #userRow input{width:115px;padding:5px 6px;font-size:12.5px;}
+    #otpRow input{width:88px;padding:5px 4px;font-size:12.5px;}
+    #userRow button, #otpRow button{padding:6px 7px;font-size:11px;}
     #overlay button{font-size:22px;padding:10px 28px;}
     #overlay button#shopBtn{font-size:18px;padding:10px 18px;}
     .shop-box{padding:14px;}
@@ -150,15 +167,29 @@
   <div id="overlay">
     <h1>REEL <span>GOLF</span></h1>
     <div class="tag">Field-tested off a dock &middot; est. sometime in the &rsquo;70s</div>
+    <div id="authTabs" class="auth-tabs">
+      <button type="button" class="auth-tab active" data-tab="phone">📱 Phone</button>
+      <button type="button" class="auth-tab" data-tab="email">✉️ Email</button>
+    </div>
     <div id="userRow">
-      <label for="usernameInput" id="authLabel">Playing as</label>
-      <input id="usernameInput" type="email" maxlength="50" placeholder="Enter email...">
+      <label for="usernameInput" id="authLabel" class="hidden">Playing as</label>
+      <input id="usernameInput" class="hidden" type="text" maxlength="20" placeholder="Your username">
+      <input id="phoneInput" type="tel" inputmode="tel" placeholder="(555) 000-0000" autocomplete="tel">
+      <input id="emailInput" class="hidden" type="email" placeholder="Enter email..." autocomplete="email">
       <button id="usernameSave">LOGIN</button>
       <button id="logoutBtn" class="hidden">LOGOUT</button>
     </div>
+    <div id="phoneConsentRow" class="consent-row">
+      <input type="checkbox" id="phoneConsent" class="consent-check">
+      <label for="phoneConsent" class="consent-text">
+        I agree to receive SMS verification codes from Reel Golf. Msg &amp; data rates may apply. Reply STOP to cancel. <a href="privacy.html" target="_blank">Privacy</a> &amp; <a href="terms.html" target="_blank">Terms</a>.
+      </label>
+    </div>
     <div id="otpRow" class="hidden">
-      <input id="otpInput" maxlength="6" placeholder="Enter code">
+      <input id="otpInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code">
       <button id="otpVerify">VERIFY</button>
+      <button id="resendOtpBtn" disabled>RESEND</button>
+      <button id="cancelOtpBtn" type="button" title="Cancel">&times;</button>
     </div>
     <div id="userMsg"></div>
     <div class="rules" id="rulesBlock">
@@ -216,14 +247,27 @@
   const shopMsg = document.getElementById('shopMsg');
   const rulesBlock = document.getElementById('rulesBlock');
   const finalStats = document.getElementById('finalStats');
+  const authTabs = document.getElementById('authTabs');
+  const authTabBtns = document.querySelectorAll('.auth-tab');
+  const userRow = document.getElementById('userRow');
   const usernameInput = document.getElementById('usernameInput');
+  const phoneInput = document.getElementById('phoneInput');
+  const emailInput = document.getElementById('emailInput');
   const usernameSave = document.getElementById('usernameSave');
   const logoutBtn = document.getElementById('logoutBtn');
+  const phoneConsentRow = document.getElementById('phoneConsentRow');
+  const phoneConsent = document.getElementById('phoneConsent');
   const userMsg = document.getElementById('userMsg');
   const otpRow = document.getElementById('otpRow');
   const otpInput = document.getElementById('otpInput');
   const otpVerify = document.getElementById('otpVerify');
+  const resendOtpBtn = document.getElementById('resendOtpBtn');
+  const cancelOtpBtn = document.getElementById('cancelOtpBtn');
   const authLabel = document.getElementById('authLabel');
+
+  let currentAuthTab = localStorage.getItem('rg_auth_pref') || 'phone';
+  let resendTimer = null;
+  let resendSeconds = 0;
 
   function setUserMsg(text, ok) {
     userMsg.textContent = text;
@@ -242,24 +286,71 @@
     }
   }
 
+  function switchAuthTab(tab) {
+    currentAuthTab = tab;
+    localStorage.setItem('rg_auth_pref', tab);
+    authTabBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    if (tab === 'phone') {
+      phoneInput.classList.remove('hidden');
+      emailInput.classList.add('hidden');
+      phoneConsentRow.classList.remove('hidden');
+    } else {
+      emailInput.classList.remove('hidden');
+      phoneInput.classList.add('hidden');
+      phoneConsentRow.classList.add('hidden');
+    }
+    setUserMsg('', false);
+  }
+
   function setAuthState(session) {
     const api = window.RG_API;
+    clearInterval(resendTimer);
+    otpRow.classList.add('hidden');
+
     if (session && session.user && api) {
+      authTabs.classList.add('hidden');
+      phoneConsentRow.classList.add('hidden');
+      phoneInput.classList.add('hidden');
+      emailInput.classList.add('hidden');
+      usernameInput.classList.remove('hidden');
       usernameInput.type = 'text';
-      usernameInput.value = api.username || session.user.email || '';
+      usernameInput.value = api.username || session.user.phone || session.user.email || '';
       usernameInput.placeholder = 'Your username';
       usernameSave.textContent = 'SAVE';
+      authLabel.classList.remove('hidden');
       authLabel.textContent = 'Playing as';
       logoutBtn.classList.remove('hidden');
+      userRow.classList.remove('hidden');
     } else {
-      usernameInput.type = 'email';
-      usernameInput.value = '';
-      usernameInput.placeholder = 'Enter email...';
-      usernameSave.textContent = 'LOGIN';
-      authLabel.textContent = 'Playing as';
+      authTabs.classList.remove('hidden');
+      usernameInput.classList.add('hidden');
+      authLabel.classList.add('hidden');
       logoutBtn.classList.add('hidden');
+      usernameSave.textContent = 'LOGIN';
+      userRow.classList.remove('hidden');
+      switchAuthTab(currentAuthTab);
     }
     updateCoinDisplays();
+  }
+
+  function startResendCountdown() {
+    clearInterval(resendTimer);
+    resendSeconds = 45;
+    resendOtpBtn.disabled = true;
+    resendOtpBtn.textContent = `RESEND (${resendSeconds}s)`;
+
+    resendTimer = setInterval(() => {
+      resendSeconds--;
+      if (resendSeconds <= 0) {
+        clearInterval(resendTimer);
+        resendOtpBtn.disabled = false;
+        resendOtpBtn.textContent = 'RESEND';
+      } else {
+        resendOtpBtn.textContent = `RESEND (${resendSeconds}s)`;
+      }
+    }, 1000);
   }
 
   async function saveUsername() {
@@ -267,7 +358,7 @@
     if (!api || !api.user) return;
     const name = usernameInput.value.trim();
     if (name === api.username) return;
-    if (usernameSave.textContent === 'SAVE' && !/^[A-Za-z0-9_ ]{3,20}$/.test(name)) {
+    if (!/^[A-Za-z0-9_ ]{3,20}$/.test(name)) {
       setUserMsg('3-20 letters, numbers, spaces or _', false);
       return;
     }
@@ -285,24 +376,65 @@
   async function handleLogin() {
     const api = window.RG_API;
     if (!api) return;
-    const email = usernameInput.value.trim();
-    if (!email.includes('@')) {
-      setUserMsg('Enter a valid email', false);
-      return;
-    }
-    setUserMsg('', false);
-    try {
-      const { error } = await api.signInWithOtp(email);
-      if (error) {
-        setUserMsg(error.message, false);
+
+    if (currentAuthTab === 'phone') {
+      const rawPhone = phoneInput.value.trim();
+      const digits = rawPhone.replace(/\D/g, '');
+      if (digits.length < 10) {
+        setUserMsg('Enter a valid 10-digit mobile number', false);
         return;
       }
-      usernameInput.classList.add('hidden');
-      usernameSave.classList.add('hidden');
-      logoutBtn.classList.add('hidden');
-      setUserMsg('Check your email for the login link!', true);
-    } catch (err) {
-      setUserMsg(err.message, false);
+      if (!phoneConsent.checked) {
+        setUserMsg('Please agree to SMS terms to continue', false);
+        return;
+      }
+      usernameSave.disabled = true;
+      setUserMsg('Sending verification code...', true);
+      try {
+        const { error } = await api.signInWithPhone(rawPhone);
+        if (error) {
+          setUserMsg(error.message, false);
+          return;
+        }
+        userRow.classList.add('hidden');
+        authTabs.classList.add('hidden');
+        phoneConsentRow.classList.add('hidden');
+        otpRow.classList.remove('hidden');
+        otpInput.value = '';
+        otpInput.focus();
+        startResendCountdown();
+        setUserMsg('Verification code sent via SMS!', true);
+      } catch (err) {
+        setUserMsg(err.message, false);
+      } finally {
+        usernameSave.disabled = false;
+      }
+    } else {
+      const email = emailInput.value.trim();
+      if (!email.includes('@')) {
+        setUserMsg('Enter a valid email', false);
+        return;
+      }
+      usernameSave.disabled = true;
+      setUserMsg('Sending login link/code...', true);
+      try {
+        const { error } = await api.signInWithOtp(email);
+        if (error) {
+          setUserMsg(error.message, false);
+          return;
+        }
+        userRow.classList.add('hidden');
+        authTabs.classList.add('hidden');
+        otpRow.classList.remove('hidden');
+        otpInput.value = '';
+        otpInput.focus();
+        startResendCountdown();
+        setUserMsg('Check your email for the code or magic link!', true);
+      } catch (err) {
+        setUserMsg(err.message, false);
+      } finally {
+        usernameSave.disabled = false;
+      }
     }
   }
 
@@ -310,24 +442,61 @@
     const api = window.RG_API;
     if (!api) return;
     const token = otpInput.value.trim();
-    const email = usernameInput.value.trim();
+    if (token.length < 6) {
+      setUserMsg('Enter 6-digit code', false);
+      return;
+    }
+    otpVerify.disabled = true;
+    setUserMsg('Verifying...', true);
     try {
-      const { data, error } = await api.verifyOtp(email, token);
-      if (error) {
-        setUserMsg(error.message, false);
+      let res;
+      if (currentAuthTab === 'phone') {
+        res = await api.verifyPhoneOtp(phoneInput.value, token);
+      } else {
+        res = await api.verifyOtp(emailInput.value, token);
+      }
+      if (res.error) {
+        setUserMsg(res.error.message, false);
         return;
       }
-      api.user = data.user;
-      await api.ensurePlayerRow();
-      await api.loadPlayerData();
-      otpRow.classList.add('hidden');
-      usernameInput.classList.remove('hidden');
-      usernameSave.classList.remove('hidden');
-      setAuthState(data.session || { user: data.user });
+      clearInterval(resendTimer);
+      setAuthState(res.data.session || { user: res.data.user });
       setUserMsg('Logged in!', true);
     } catch (err) {
       setUserMsg(err.message, false);
+    } finally {
+      otpVerify.disabled = false;
     }
+  }
+
+  async function handleResend() {
+    const api = window.RG_API;
+    if (!api || resendSeconds > 0) return;
+    resendOtpBtn.disabled = true;
+    try {
+      if (currentAuthTab === 'phone') {
+        const { error } = await api.signInWithPhone(phoneInput.value);
+        if (error) { setUserMsg(error.message, false); return; }
+      } else {
+        const { error } = await api.signInWithOtp(emailInput.value);
+        if (error) { setUserMsg(error.message, false); return; }
+      }
+      startResendCountdown();
+      setUserMsg('New verification code sent!', true);
+    } catch (err) {
+      setUserMsg(err.message, false);
+    }
+  }
+
+  function cancelOtp() {
+    clearInterval(resendTimer);
+    otpRow.classList.add('hidden');
+    userRow.classList.remove('hidden');
+    authTabs.classList.remove('hidden');
+    if (currentAuthTab === 'phone') {
+      phoneConsentRow.classList.remove('hidden');
+    }
+    setUserMsg('', false);
   }
 
   async function handleLogout() {
@@ -465,20 +634,58 @@
   if (openShopLink) openShopLink.addEventListener('click', openShop);
   if (shopCloseBtn) shopCloseBtn.addEventListener('click', closeShop);
 
+  authTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => switchAuthTab(btn.dataset.tab));
+  });
+
+  phoneInput.addEventListener('input', () => {
+    const val = phoneInput.value;
+    if (val.startsWith('+')) return;
+    const digits = val.replace(/\D/g, '').slice(0, 10);
+    if (digits.length === 0) {
+      phoneInput.value = '';
+    } else if (digits.length <= 3) {
+      phoneInput.value = `(${digits}`;
+    } else if (digits.length <= 6) {
+      phoneInput.value = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    } else {
+      phoneInput.value = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+  });
+
+  otpInput.addEventListener('input', () => {
+    const digits = otpInput.value.replace(/\D/g, '').slice(0, 6);
+    otpInput.value = digits;
+    if (digits.length === 6) {
+      handleVerify();
+    }
+  });
+
   usernameSave.addEventListener('click', () => {
     if (usernameSave.textContent === 'LOGIN') handleLogin();
     else saveUsername();
   });
 
-  usernameInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      if (usernameSave.textContent === 'LOGIN') handleLogin();
-      else saveUsername();
-    }
+  [usernameInput, phoneInput, emailInput].forEach(inp => {
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        if (usernameSave.textContent === 'LOGIN') handleLogin();
+        else saveUsername();
+      }
+    });
   });
 
+  otpInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleVerify();
+  });
+
+  resendOtpBtn.addEventListener('click', handleResend);
+  cancelOtpBtn.addEventListener('click', cancelOtp);
   logoutBtn.addEventListener('click', handleLogout);
   otpVerify.addEventListener('click', handleVerify);
+
+  // Initial tab setup
+  switchAuthTab(currentAuthTab);
 
   // Initialize API auth & catalog
   if (window.RG_API) {

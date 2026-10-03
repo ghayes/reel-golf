@@ -179,6 +179,49 @@
       }
     },
 
+    normalizePhone(phone) {
+      if (!phone) return '';
+      const clean = phone.trim();
+      const digitsOnly = clean.replace(/[^\d+]/g, '');
+      if (digitsOnly.startsWith('+')) {
+        return digitsOnly;
+      }
+      if (digitsOnly.length === 10) {
+        return '+1' + digitsOnly;
+      }
+      if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+        return '+' + digitsOnly;
+      }
+      return '+' + digitsOnly;
+    },
+
+    async signInWithPhone(phone) {
+      if (!sb) throw new Error('Offline');
+      const normalized = this.normalizePhone(phone);
+      if (!normalized || normalized.length < 11) {
+        throw new Error('Please enter a valid phone number');
+      }
+      return await sb.auth.signInWithOtp({
+        phone: normalized
+      });
+    },
+
+    async verifyPhoneOtp(phone, token) {
+      if (!sb) throw new Error('Offline');
+      const normalized = this.normalizePhone(phone);
+      const res = await sb.auth.verifyOtp({
+        phone: normalized,
+        token: token.trim(),
+        type: 'sms'
+      });
+      if (!res.error && res.data && res.data.user) {
+        this.user = res.data.user;
+        await this.ensurePlayerRow();
+        await this.loadPlayerData();
+      }
+      return res;
+    },
+
     async signInWithOtp(email) {
       if (!sb) throw new Error('Offline');
       const redirectUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.reel-golf.com';
@@ -190,7 +233,13 @@
 
     async verifyOtp(email, token) {
       if (!sb) throw new Error('Offline');
-      return await sb.auth.verifyOtp({ email, token, type: 'email' });
+      const res = await sb.auth.verifyOtp({ email, token: token.trim(), type: 'email' });
+      if (!res.error && res.data && res.data.user) {
+        this.user = res.data.user;
+        await this.ensurePlayerRow();
+        await this.loadPlayerData();
+      }
+      return res;
     },
 
     async signOut() {
