@@ -1,4 +1,7 @@
-# Minimal Supabase CLI config. Only pins settings that must not drift on deploy.
+# Minimal, intentionally PARTIAL Supabase CLI config. Only pins settings that
+# must not drift on deploy.
+# WARNING: do NOT run `supabase config push` with this file; omitted sections
+# would be treated as defaults and could overwrite the remote project's auth settings.
 project_id = "allwunqurqgdaxjnovhh"
 
 # Auth hooks are called by Supabase Auth without a Supabase JWT. The function
