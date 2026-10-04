@@ -14,7 +14,7 @@ Deno.serve(async (req: Request) => {
   // Fail closed: this endpoint is publicly reachable, so every request must
   // carry a valid Standard Webhooks signature from Supabase Auth. Without this
   // anyone could trigger SMS to arbitrary numbers through our Sent.dm account.
-  const hookSecret = Deno.env.get("SEND_SMS_HOOK_SECRET")?.replace("v1,whsec_", "");
+  const hookSecret = Deno.env.get("SEND_SMS_HOOK_SECRET")?.trim().replace("v1,whsec_", "");
   if (!hookSecret) {
     console.error("SEND_SMS_HOOK_SECRET is not configured");
     return new Response(
