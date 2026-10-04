@@ -1,0 +1,8 @@
+# Minimal Supabase CLI config. Only pins settings that must not drift on deploy.
+project_id = "allwunqurqgdaxjnovhh"
+
+# Auth hooks are called by Supabase Auth without a Supabase JWT. The function
+# authenticates callers itself via the Standard Webhooks signature, so JWT
+# verification must stay off or the Send SMS hook breaks on redeploy.
+[functions.send-sms-sentdm]
+verify_jwt = false
