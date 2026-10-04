@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
 
 const SENT_API_URL = "https://api.sent.dm/v3/messages";
 
@@ -10,11 +11,33 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  try {
-    const body = await req.json();
+  // Fail closed: this endpoint is publicly reachable, so every request must
+  // carry a valid Standard Webhooks signature from Supabase Auth. Without this
+  // anyone could trigger SMS to arbitrary numbers through our Sent.dm account.
+  const hookSecret = Deno.env.get("SEND_SMS_HOOK_SECRET")?.replace("v1,whsec_", "");
+  if (!hookSecret) {
+    console.error("SEND_SMS_HOOK_SECRET is not configured");
+    return new Response(
+      JSON.stringify({ error: { http_code: 500, message: "SMS hook is not configured" } }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
 
-    const phone = body.sms?.phone || body.user?.phone || body.phone;
-    const otp = body.sms?.otp || body.otp;
+  const rawBody = await req.text();
+  let body: any;
+  try {
+    body = new Webhook(hookSecret).verify(rawBody, Object.fromEntries(req.headers));
+  } catch (_err) {
+    console.warn("Rejected send-sms hook request: invalid signature");
+    return new Response(
+      JSON.stringify({ error: { http_code: 401, message: "Invalid signature" } }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  try {
+    const phone = body.sms?.phone || body.user?.phone;
+    const otp = body.sms?.otp;
 
     console.log("Send SMS hook payload:", {
       hasUser: !!body.user,
@@ -48,7 +71,19 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const templateId = Deno.env.get("SENT_TEMPLATE_ID") || "c3d90ffe-61cc-41cc-b08f-c62e545631a1";
+    const templateId = Deno.env.get("SENT_TEMPLATE_ID");
+    if (!templateId) {
+      console.error("SENT_TEMPLATE_ID is not configured");
+      return new Response(
+        JSON.stringify({
+          error: {
+            http_code: 500,
+            message: "SMS provider is not configured",
+          },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     const sentPayload = {
       to: [phone],
