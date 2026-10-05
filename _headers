@@ -2,6 +2,9 @@
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://allwunqurqgdaxjnovhh.supabase.co https://api.github.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 
 /*.html
   Cache-Control: public, max-age=0, must-revalidate
@@ -14,6 +17,9 @@
 
 /*.js
   Cache-Control: public, max-age=0, must-revalidate
+
+/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
 
 /*.css
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
