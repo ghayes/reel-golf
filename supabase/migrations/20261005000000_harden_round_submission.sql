@@ -54,7 +54,9 @@ declare
   -- Game rules mirrored from game.js. Keep in sync if the game changes.
   c_balls        constant int     := 3;      -- balls per round
   c_max_line_yd  constant numeric := 225;    -- MAX_LINE_YD: longer casts snap, so never score
-  c_min_gap      constant interval := interval '20 seconds';  -- shortest real round seen: ~93s
+  -- Fastest legitimate round is three overwind snaps back to back (~3 s per ball, ~10 s total),
+  -- so the gap must stay below that. The hourly cap below is the real limiter.
+  c_min_gap      constant interval := interval '5 seconds';
   c_hourly_max   constant int     := 60;
 
   v_player_id    uuid := auth.uid();
