@@ -130,8 +130,8 @@
           p_lifetime_snaps: summary.lifetimeSnaps || 0
         });
         if (rpcErr) {
-          // No client-side fallback: players/rounds/catches/trophies are not
-          // writable from the browser. Scores are only recorded via the RPC.
+          // No client-side fallback: player stats are only writable via the
+          // submit_round RPC (see 20261004000000_lock_players_writes.sql).
           console.warn('submit_round RPC failed', rpcErr);
           return null;
         }
