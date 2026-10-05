@@ -57,10 +57,11 @@
         } else {
           this.username = this.randomUsername();
           this.coins = 0;
+          // Only id/username are client-writable; stat columns default to 0
+          // server-side (see migration 20261004000000_lock_players_writes.sql).
           const { error: insErr } = await sb.from('players').insert({
             id: this.user.id,
-            username: this.username,
-            coins: 0
+            username: this.username
           });
           if (insErr) console.warn('players insert failed', insErr);
         }
@@ -119,7 +120,7 @@
     async submitRound(summary) {
       if (!sb || !this.user) return null;
       try {
-        // Attempt secure RPC submission first
+        // Scores are recorded only through the server-side RPC
         const { data: rpcData, error: rpcErr } = await sb.rpc('submit_round', {
           p_score: summary.score,
           p_best_dist: summary.bestDist,
@@ -128,51 +129,13 @@
           p_ring2x: !!summary.ring2x,
           p_lifetime_snaps: summary.lifetimeSnaps || 0
         });
-        if (!rpcErr) return rpcData;
-
-        // Fallback for legacy database schema setup
-        console.warn('submit_round RPC unavailable, using direct table submission', rpcErr);
-        const { data: playerRow } = await sb.from('players')
-          .select('total_score,best_distance,balls_played,coins').eq('id', this.user.id).maybeSingle();
-
-        await sb.from('players').update({
-          total_score: (playerRow?.total_score || 0) + summary.score,
-          coins: (playerRow?.coins || 0) + Math.floor(summary.score / 10),
-          best_distance: Math.max(playerRow?.best_distance || 0, summary.bestDist),
-          balls_played: (playerRow?.balls_played || 0) + 3,
-        }).eq('id', this.user.id);
-
-        const { data: roundRow, error: roundErr } = await sb.from('rounds')
-          .insert({ player_id: this.user.id, score: summary.score, fish_caught: summary.fishCaught })
-          .select('id').single();
-        if (roundErr) throw roundErr;
-
-        if (summary.catches && summary.catches.length) {
-          const rows = summary.catches.map(c => ({
-            player_id: this.user.id,
-            round_id: roundRow.id,
-            species: c.species,
-            distance_yd: c.distance_yd,
-            bonus_points: c.bonus_points,
-          }));
-          await sb.from('catches').insert(rows);
+        if (rpcErr) {
+          // No client-side fallback: players/rounds/catches/trophies are not
+          // writable from the browser. Scores are only recorded via the RPC.
+          console.warn('submit_round RPC failed', rpcErr);
+          return null;
         }
-
-        const trophyCodes = [];
-        if (summary.fishCaught > 0) trophyCodes.push('first_fish');
-        if (summary.catches && summary.catches.some(c => c.species === 'PIKE')) trophyCodes.push('first_pike');
-        if (summary.ring2x) trophyCodes.push('double_ring');
-        if (summary.bestDist >= 150) trophyCodes.push('long_drive_150');
-        if (summary.score >= 100) trophyCodes.push('century_score');
-        if (summary.score >= 1000) trophyCodes.push('thousand_score');
-        if (summary.lifetimeSnaps >= 5) trophyCodes.push('snap_five');
-
-        if (trophyCodes.length) {
-          const rows = trophyCodes.map(code => ({ player_id: this.user.id, trophy_code: code }));
-          await sb.from('player_trophies')
-            .upsert(rows, { onConflict: 'player_id,trophy_code', ignoreDuplicates: true });
-        }
-        return roundRow;
+        return rpcData;
       } catch (e) {
         console.warn('Supabase round sync failed', e);
         return null;
