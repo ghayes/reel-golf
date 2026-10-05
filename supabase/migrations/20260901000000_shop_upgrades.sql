@@ -78,15 +78,19 @@ begin
 end;
 $$;
 
--- 2. Seed shop catalog items (upsert by asset_key)
-delete from shop_items;
-
-insert into shop_items (name, description, cost, item_type, asset_key) values
+-- 2. Seed shop catalog items (insert-if-missing by asset_key; never deletes,
+--    because player_inventory references shop_items. The authoritative upsert
+--    lives in 20261006000000_harden_shop.sql.)
+insert into shop_items (name, description, cost, item_type, asset_key)
+select v.name, v.description, v.cost, v.item_type, v.asset_key
+from (values
   ('Graphite Rod', '+10% max drive launch speed', 150, 'ROD', 'graphite_rod'),
   ('Braided Line', '+20% max line tension tolerance', 200, 'LINE', 'braided_line'),
   ('Super Bait', 'Increases fish bite chance by +25%', 100, 'BAIT', 'super_bait'),
   ('Titanium Reel', '+20% faster reeling speed', 250, 'REEL', 'titanium_reel'),
-  ('Neon Ball', 'Bright neon glow and ball trail', 100, 'SKIN', 'neon_ball');
+  ('Neon Ball', 'Bright neon glow and ball trail', 100, 'SKIN', 'neon_ball')
+) as v(name, description, cost, item_type, asset_key)
+where not exists (select 1 from shop_items s where s.asset_key = v.asset_key);
 
 -- 3. Table & routine permissions for client roles
 grant select on public.shop_items to anon, authenticated;
