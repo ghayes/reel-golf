@@ -127,7 +127,7 @@
           p_fish_caught: summary.fishCaught,
           p_catches: summary.catches || [],
           p_ring2x: !!summary.ring2x,
-          p_lifetime_snaps: summary.lifetimeSnaps || 0
+          p_round_snaps: summary.snaps || 0
         });
         if (rpcErr) {
           // No client-side fallback: player stats are only writable via the

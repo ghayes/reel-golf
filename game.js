@@ -42,6 +42,7 @@
     S.balls = 3;
     S.bestDist = 0;
     S.fishCaught = 0;
+    S.snaps = 0;                // balls lost to snapped line this round
     S.roundCatches = [];
     S.everRing2x = false;
     nextBall();
@@ -153,7 +154,7 @@
     S.phase = 'snapped';
     S.msg = reason;
     S.balls--;
-    localStorage.setItem('rg_snaps', String((parseInt(localStorage.getItem('rg_snaps') || '0', 10)) + 1));
+    S.snaps++;
     if (stampEl) {
       stampEl.classList.remove('show');
       void stampEl.offsetWidth;
@@ -189,7 +190,7 @@
       fishCaught: S.fishCaught,
       catches: S.roundCatches,
       ring2x: S.everRing2x,
-      lifetimeSnaps: parseInt(localStorage.getItem('rg_snaps') || '0', 10),
+      snaps: S.snaps,
     };
     const earnedCoins = Math.floor(S.score / 10);
 
