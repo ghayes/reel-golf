@@ -287,6 +287,11 @@
     }
   }
 
+  // Shop rows come from the database; escape text and coerce numbers before
+  // building HTML (defense in depth: the catalog is currently admin-written).
+  function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+
   function renderShop() {
     const api = window.RG_API;
     if (!shopItemList || !api) return;
@@ -315,7 +320,7 @@
       } else if (!api.user) {
         btnHtml = '<button class="shop-buy-btn" disabled title="Login to purchase">LOGIN</button>';
       } else if (canAfford) {
-        btnHtml = `<button class="shop-buy-btn" data-id="${item.id}">BUY</button>`;
+        btnHtml = `<button class="shop-buy-btn" data-id="${num(item.id)}">BUY</button>`;
       } else {
         btnHtml = `<button class="shop-buy-btn" disabled>NEED 🪙</button>`;
       }
@@ -324,13 +329,13 @@
         <div class="shop-card ${owned ? 'owned' : ''}">
           <div class="shop-info">
             <div class="shop-info-top">
-              <span class="shop-item-name">${icon} ${item.name}</span>
-              <span class="shop-type-badge">${item.item_type}</span>
+              <span class="shop-item-name">${icon} ${esc(item.name)}</span>
+              <span class="shop-type-badge">${esc(item.item_type)}</span>
             </div>
-            <div class="shop-desc">${item.description || ''}</div>
+            <div class="shop-desc">${esc(item.description || '')}</div>
           </div>
           <div class="shop-action">
-            <div class="shop-cost">${item.cost} 🪙</div>
+            <div class="shop-cost">${num(item.cost)} 🪙</div>
             ${btnHtml}
           </div>
         </div>
@@ -386,9 +391,9 @@
           updateCoinDisplays();
         }
         finalStats.innerHTML =
-          `FINAL SCORE <em>${summary.score}</em> &middot; +${earnedCoins} 🪙<br>` +
+          `FINAL SCORE <em>${num(summary.score)}</em> &middot; +${num(earnedCoins)} 🪙<br>` +
           `LONGEST DRIVE <em>${Math.round(summary.bestDist)} yd</em><br>` +
-          `FISH LANDED <em>${summary.fishCaught}</em>`;
+          `FISH LANDED <em>${num(summary.fishCaught)}</em>`;
         startBtn.textContent = 'PLAY AGAIN';
         overlay.classList.remove('hidden');
       };

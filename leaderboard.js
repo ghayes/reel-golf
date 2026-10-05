@@ -7,6 +7,8 @@
 
   function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
+  const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+
   async function loadPage(p){
     content.innerHTML = '<div class="state">Loading scores&hellip;</div>';
     try {
@@ -30,9 +32,9 @@
         return `<tr>
           <td class="rank ${rankCls}">${rank}</td>
           <td class="uname">${esc(pl.username)}</td>
-          <td class="num score">${pl.total_score}</td>
-          <td class="num">${Math.round(pl.best_distance)} yd</td>
-          <td class="num">${pl.total_catches}${pl.pikes_landed>0 ? ' 🐊'+pl.pikes_landed : ''}</td>
+          <td class="num score">${num(pl.total_score)}</td>
+          <td class="num">${Math.round(num(pl.best_distance))} yd</td>
+          <td class="num">${num(pl.total_catches)}${num(pl.pikes_landed)>0 ? ' 🐊'+num(pl.pikes_landed) : ''}</td>
         </tr>`;
       }).join('');
 
