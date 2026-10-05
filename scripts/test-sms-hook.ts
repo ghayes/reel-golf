@@ -1,6 +1,7 @@
-// Offline test for supabase/functions/send-sms-sentdm. Runs the real function
-// code in-process with a mocked Sent.dm API and locally signed Standard
-// Webhooks requests. Sends NO SMS and touches no Supabase project.
+// Test for supabase/functions/send-sms-sentdm. Runs the real function code
+// in-process with a mocked Sent.dm API and locally signed Standard Webhooks
+// requests. Sends NO SMS and touches no Supabase project. (Needs network the
+// first time only, to fetch the esm.sh / jsr: imports into the Deno cache.)
 //
 // Usage:  deno run -A scripts/test-sms-hook.ts [path/to/index.ts]
 // Exit:   0 if every check passes, 1 otherwise
@@ -22,8 +23,9 @@ let sentCalls: any[] = [];
 const realFetch = globalThis.fetch;
 globalThis.fetch = ((url: any, init: any) => {
   if (String(url).startsWith("https://api.sent.dm")) { sentCalls.push({ url: String(url), init }); return mock(String(url), init); }
-  return realFetch(url, init);
+  throw new Error("unmocked fetch in test: " + url); // the function must only talk to Sent.dm
 }) as any;
+void realFetch;
 
 const logs: string[] = [];
 for (const k of ["log", "error", "warn"] as const) { (console as any)[k] = (...a: any[]) => logs.push(a.map(x => typeof x === "string" ? x : JSON.stringify(x, Object.getOwnPropertyNames(Object(x)))).join(" ")); }
@@ -41,7 +43,11 @@ const good = { user: { phone: "15555550123" }, sms: { otp: "123456", phone: "155
 let pass = 0, fail = 0; const out: string[] = [];
 async function t(name: string, fn: () => Promise<[boolean, string]>) {
   sentCalls = []; logs.length = 0; mock = async () => new Response("{}", { status: 202 });
-  const [ok, info] = await fn(); (ok ? pass++ : fail++); out.push(`${ok ? "PASS" : "FAIL"}  ${name}${ok ? "" : "  <-- " + info}`);
+  // A hung test (e.g. code that never resolves) must fail, not stall the run.
+  const [ok, info] = await Promise.race([
+    fn(),
+    new Promise<[boolean, string]>((res) => setTimeout(() => res([false, "test timed out after 8s"]), 8000)),
+  ]); (ok ? pass++ : fail++); out.push(`${ok ? "PASS" : "FAIL"}  ${name}${ok ? "" : "  <-- " + info}`);
 }
 const read = async (r: Response) => ({ status: r.status, text: await r.text(), headers: r.headers });
 
@@ -49,7 +55,7 @@ await t("GET -> real 405 + Allow", async () => { const r = await read(await hand
 await t("unsigned POST -> 401 Invalid signature", async () => { const r = await read(await handler(new Request("https://x/f", { method: "POST", body: "{}" }))); return [r.status === 401 && r.text.includes("Invalid signature") && sentCalls.length === 0, `${r.status} ${r.text}`]; });
 await t("forged signature -> 401, no Sent call", async () => { const q = new Request("https://x/f", { method: "POST", body: JSON.stringify(good), headers: { "webhook-id": "msg_1", "webhook-timestamp": String(Math.floor(Date.now()/1000)), "webhook-signature": "v1,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" } }); const r = await read(await handler(q)); return [r.status === 401 && sentCalls.length === 0, `${r.status}`]; });
 await t("stale timestamp (replay) -> 401", async () => { const r = await read(await handler(signed(good, Math.floor(Date.now()/1000) - 3600))); return [r.status === 401 && sentCalls.length === 0, `${r.status}`]; });
-await t("oversized content-length -> 413 before reading", async () => { const r = await read(await handler(new Request("https://x/f", { method: "POST", body: "x".repeat(20000), headers: { "content-length": "20000" } }))); return [r.status === 413 && sentCalls.length === 0, `${r.status}`]; });
+await t("declared oversized content-length -> 413 (rejected without a provider call)", async () => { const r = await read(await handler(new Request("https://x/f", { method: "POST", body: "x".repeat(25000), headers: { "content-length": "25000" } }))); return [r.status === 413 && sentCalls.length === 0, `${r.status}`]; });
 await t("valid + Sent 202 -> 200 {} and correct provider payload", async () => {
   const r = await read(await handler(signed(good))); const c = sentCalls[0]; const b = c && JSON.parse(c.init.body);
   return [r.status === 200 && r.text === "{}" && sentCalls.length === 1 && c.init.headers["x-api-key"] === "key_TESTKEY" && b.to[0] === "15555550123" && b.template.id === "tpl_TEST" && b.template.parameters.code === "123456" && b.channel[0] === "sms", `${r.status} ${r.text} ${JSON.stringify(b)}`]; });
@@ -65,6 +71,15 @@ await t("Sent hangs -> times out (~4s), generic timeout message", async () => {
   mock = (_u, init) => new Promise((_res, rej) => init.signal!.addEventListener("abort", () => rej(init.signal!.reason)));
   const t0 = Date.now(); const r = await read(await handler(signed(good))); const ms = Date.now() - t0;
   return [ms >= 3500 && ms < 6000 && r.status === 200 && /timed out/.test(r.text), `${ms}ms ${r.text}`]; });
+await t("oversized body WITHOUT content-length (chunked) -> 413", async () => { const r = await read(await handler(signed({ ...good, user: { ...good.user, user_metadata: { pad: "x".repeat(25000) } } }))); return [r.status === 413 && sentCalls.length === 0, `${r.status}`]; });
+await t("large legitimate payload (~18KB, under the 20KB cap) -> 200", async () => { const r = await read(await handler(signed({ ...good, user: { ...good.user, user_metadata: { pad: "x".repeat(18000) } } }))); return [r.status === 200 && r.text === "{}" && sentCalls.length === 1, `${r.status} ${r.text.slice(0, 80)}`]; });
+await t("provider error excerpt is redacted (phone, otp, long digits) and bounded", async () => {
+  mock = async () => new Response("bad number 15555550123 / +15555550123 code 123456 acct 99887766554 " + "z".repeat(1000), { status: 400 });
+  const r = await read(await handler(signed(good))); const all = logs.join("\n"); const line = logs.find(l => l.startsWith("Sent.dm error:")) ?? "";
+  return [!/15555550123|123456|99887766554/.test(all) && line.includes("[redacted]") && line.length < 400 && JSON.parse(r.text).error.http_code === 400, line.slice(0, 200)]; });
+await t("accepted SMS stays a success even if the response body cannot be cancelled", async () => {
+  mock = async () => new Response(new ReadableStream({ cancel() { throw new Error("cancel failed"); } }), { status: 202 });
+  const r = await read(await handler(signed(good))); return [r.status === 200 && r.text === "{}", `${r.status} ${r.text}`]; });
 await t("signed but missing otp -> 400 generic", async () => { const r = await read(await handler(signed({ user: { phone: "1555" }, sms: {} }))); return [JSON.parse(r.text).error.http_code === 400 && sentCalls.length === 0, r.text]; });
 Deno.env.delete("SENT_API_KEY");
 await t("missing SENT_API_KEY -> 'not configured', no Sent call", async () => { const r = await read(await handler(signed(good))); return [/not configured/.test(r.text) && sentCalls.length === 0, r.text]; });

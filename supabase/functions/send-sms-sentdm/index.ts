@@ -4,15 +4,26 @@ import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
 const SENT_API_URL = "https://api.sent.dm/v3/messages";
 // Supabase Auth gives hooks ~5s; fail on our own first so we can log why.
 const SENT_TIMEOUT_MS = 4000;
-// A Send SMS payload is a few hundred bytes. Refuse anything large before
-// buffering it, since the signature is only checked after the body is read.
-const MAX_BODY_BYTES = 10_000;
+// Supabase documents a 20KB cap on hook payloads; refuse anything larger
+// (checked on the declared length first, then on the actual bytes) since the
+// signature is only verified after the body is buffered.
+const MAX_BODY_BYTES = 20_480;
 
 function json(status: number, body: unknown, extraHeaders: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "Content-Type": "application/json", ...extraHeaders },
   });
+}
+
+// Provider error bodies can echo the recipient number or the code. Strip both
+// (and any long digit run) before they reach the logs.
+function redact(text: string, secrets: string[]): string {
+  let out = text;
+  for (const secret of secrets) {
+    if (secret) out = out.split(secret).join("[redacted]");
+  }
+  return out.replace(/\+?\d{7,}/g, "[number]");
 }
 
 // Errors for a request that already passed signature verification. Supabase
@@ -46,7 +57,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const rawBody = await req.text();
-  if (rawBody.length > MAX_BODY_BYTES) {
+  if (new TextEncoder().encode(rawBody).length > MAX_BODY_BYTES) {
     return json(413, { error: { http_code: 413, message: "Payload too large" } });
   }
   let body: any;
@@ -105,17 +116,19 @@ Deno.serve(async (req: Request) => {
       signal: AbortSignal.timeout(SENT_TIMEOUT_MS),
     });
 
-    if (!sentResponse.ok && sentResponse.status !== 202) {
+    if (!sentResponse.ok) {
       // The provider's body may contain account/template details and the
-      // recipient number: log a bounded excerpt, never return it to the caller.
-      const detail = (await sentResponse.text().catch(() => "")).slice(0, 300);
+      // recipient number: log a redacted, bounded excerpt, never return it.
+      const detail = redact(await sentResponse.text().catch(() => ""), [phone, String(otp)]).slice(0, 300);
       console.error("Sent.dm error:", sentResponse.status, detail);
       return sentResponse.status === 400
         ? hookError(400, "Could not send a code to that phone number")
         : hookError(500, "Failed to send verification code");
     }
 
-    await sentResponse.body?.cancel();
+    // The SMS has been accepted: nothing after this point may turn it into an
+    // error (the user would retry and get a second code).
+    await sentResponse.body?.cancel().catch(() => {});
 
     // GoTrue expects HTTP 200 with empty JSON or {}
     return json(200, {});
