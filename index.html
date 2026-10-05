@@ -362,8 +362,8 @@
     if (!api || !api.user) return;
     const name = usernameInput.value.trim();
     if (name === api.username) return;
-    if (!/^[A-Za-z0-9_ ]{3,20}$/.test(name)) {
-      setUserMsg('3-20 letters, numbers, spaces or _', false);
+    if (!/^(?!.* {2})[A-Za-z0-9_ ]{3,20}$/.test(name)) {
+      setUserMsg('3-20 letters, numbers, single spaces or _', false);
       return;
     }
     usernameSave.disabled = true;
