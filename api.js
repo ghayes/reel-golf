@@ -41,10 +41,9 @@
     async ensurePlayerRow() {
       if (!sb || !this.user) return;
       try {
-        const { data, error } = await sb.from('players')
-          .select('id,username,coins')
-          .eq('id', this.user.id)
-          .maybeSingle();
+        // Own row only, via an owner-checked RPC: `players.coins` is not
+        // readable by clients (see 20261009000001_hide_player_columns_from_authenticated.sql).
+        const { data, error } = await sb.rpc('get_my_player').maybeSingle();
 
         if (error) {
           console.warn('players lookup failed', error);
@@ -78,7 +77,7 @@
       }
       try {
         const [{ data: pData }, { data: invData }] = await Promise.all([
-          sb.from('players').select('coins').eq('id', this.user.id).maybeSingle(),
+          sb.rpc('get_my_player').maybeSingle(),
           sb.from('player_inventory').select('item_id, shop_items(asset_key)').eq('player_id', this.user.id)
         ]);
         if (pData && pData.coins !== undefined) this.coins = pData.coins;
