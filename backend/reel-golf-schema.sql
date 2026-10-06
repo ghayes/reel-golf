@@ -1,4 +1,14 @@
 -- ============================================================
+-- HISTORICAL FILE. DO NOT RE-RUN ON A LIVE DATABASE.
+-- BASELINE ONLY (original table definitions).
+-- Its policies, grants and `submit_round` are SUPERSEDED: the self-insert policies on rounds/catches/player_trophies and the
+-- client-writable players policies were removed, and `submit_round` was rewritten, by migrations 20261004000000 to 20261008000000.
+-- Running this file on a live database would re-create those insecure policies and the old function.
+-- The source of truth for the schema is supabase/migrations/ (applied in
+-- filename order). See CLAUDE.md and issue #47.
+-- ============================================================
+
+-- ============================================================
 -- DOCK GOLF — Supabase schema sketch
 -- Paste into the Supabase SQL editor (Database → SQL Editor)
 -- ============================================================
