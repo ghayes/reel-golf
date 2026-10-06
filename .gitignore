@@ -7,4 +7,5 @@ supabase/.temp/
 # Local dependencies and scratch (never commit)
 node_modules/
 .env.*
+!.env.example
 *.tmp

@@ -1,9 +1,13 @@
 -- ============================================================
 -- HISTORICAL FILE. DO NOT RE-RUN ON A LIVE DATABASE.
 -- BASELINE ONLY (original table definitions).
--- Its policies, grants and `submit_round` are SUPERSEDED: the self-insert policies on rounds/catches/player_trophies and the
--- client-writable players policies were removed, and `submit_round` was rewritten, by migrations 20261004000000 to 20261008000000.
--- Running this file on a live database would re-create those insecure policies and the old function.
+-- Parts of it are SUPERSEDED: the "self insert" policies on rounds, catches and
+-- player_trophies were dropped, and `submit_round` was rewritten, by migrations
+-- 20261004000000 to 20261008000000. Re-running this file would re-create those
+-- insecure policies and the old function. (The `players` self-insert and
+-- self-update-username policies are still live and still needed; client write
+-- access to `players` is limited by column-level GRANTs in the migrations, which
+-- this file does not contain.)
 -- The source of truth for the schema is supabase/migrations/ (applied in
 -- filename order). See CLAUDE.md and issue #47.
 -- ============================================================
