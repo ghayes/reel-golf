@@ -1,3 +1,11 @@
+-- ============================================================
+-- HISTORICAL FILE. DO NOT RE-RUN ON A LIVE DATABASE.
+-- SUPERSEDED by supabase/migrations/20261006000000_harden_shop.sql.
+-- This version of purchase_item has no row lock, so parallel purchases can overspend. Re-running it would reintroduce that race.
+-- The source of truth for the schema is supabase/migrations/ (applied in
+-- filename order). See CLAUDE.md and issue #47.
+-- ============================================================
+
 -- RPC Function: Purchase Item
 -- This function atomically deducts coins and adds an item to inventory.
 

@@ -1,3 +1,11 @@
+-- ============================================================
+-- HISTORICAL FILE. DO NOT RE-RUN ON A LIVE DATABASE.
+-- SUPERSEDED by the upsert in supabase/migrations/20261006000000_harden_shop.sql.
+-- This file uses ON CONFLICT (id), which no longer works against the UNIQUE(asset_key) catalog.
+-- The source of truth for the schema is supabase/migrations/ (applied in
+-- filename order). See CLAUDE.md and issue #47.
+-- ============================================================
+
 -- Seed initial shop items
 insert into shop_items (name, description, cost, item_type, asset_key) values
   ('Graphite Rod', '+10% max drive launch speed', 150, 'ROD', 'graphite_rod'),

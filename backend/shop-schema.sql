@@ -1,3 +1,12 @@
+-- ============================================================
+-- HISTORICAL FILE. DO NOT RE-RUN ON A LIVE DATABASE.
+-- BASELINE ONLY (original shop tables).
+-- SUPERSEDED in part by 20261006000000_harden_shop.sql (player_inventory.item_id is now ON DELETE RESTRICT, shop_items.asset_key
+-- is NOT NULL + UNIQUE, players.coins has a CHECK >= 0). Re-running it would fail or undo that.
+-- The source of truth for the schema is supabase/migrations/ (applied in
+-- filename order). See CLAUDE.md and issue #47.
+-- ============================================================
+
 -- Add currency to players
 alter table players add column coins int not null default 0;
 
