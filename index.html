@@ -6,8 +6,8 @@
 <title>Reel Golf — Prototype</title>
 <link href="https://fonts.googleapis.com/css2?family=Staatliches&display=swap" rel="stylesheet">
 <script src="vendor/supabase-js-2.117.2.umd.js"></script>
-<script src="api.js?v=20261009a"></script>
-<script src="game.js?v=20261005a" defer></script>
+<script src="api.js?v=20261013a"></script>
+<script src="game.js?v=20261013a" defer></script>
 <style>
   :root{
     --pine:#16281F; --water:#0F4C52; --deep:#072E33;
@@ -85,6 +85,7 @@
   #overlay button:focus-visible{outline:3px solid var(--cream);outline-offset:3px;}
   #finalStats{font-family:ui-monospace,Menlo,monospace;font-size:15px;line-height:2;margin-bottom:22px;}
   #finalStats em{color:var(--amber);font-style:normal;}
+  #finalStats .round-error{color:#ff8a80;font-size:13px;line-height:1.4;}
   #siteNav{display:flex;gap:16px;margin-top:18px;font-family:ui-monospace,Menlo,monospace;
     font-size:12px;letter-spacing:.08em;text-transform:uppercase;flex-wrap:wrap;justify-content:center;}
   #siteNav a{color:rgba(247,243,231,.6);text-decoration:none;border-bottom:1px solid transparent;}
@@ -231,6 +232,6 @@
   </div>
 </div>
 
-<script src="app.js?v=20261007b"></script>
+<script src="app.js?v=20261013a"></script>
 </body>
 </html>

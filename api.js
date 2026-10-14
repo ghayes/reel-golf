@@ -43,29 +43,63 @@
       try {
         // Own row only, via an owner-checked RPC: `players.coins` is not
         // readable by clients (see 20261009000001_hide_player_columns_from_authenticated.sql).
-        const { data, error } = await sb.rpc('get_my_player').maybeSingle();
+        const MAX_ATTEMPTS = 5;
+        for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+          const { data, error } = await sb.rpc('get_my_player').maybeSingle();
 
-        if (error) {
-          console.warn('players lookup failed', error);
-          return;
-        }
+          if (error) {
+            console.warn('players lookup failed', error);
+            return;
+          }
 
-        if (data) {
-          this.username = data.username;
-          if (data.coins !== undefined) this.coins = data.coins;
-        } else {
-          this.username = this.randomUsername();
-          this.coins = 0;
+          if (data) {
+            this.username = data.username;
+            if (data.coins !== undefined) this.coins = data.coins;
+            return;
+          }
+
           // Only id/username are client-writable; stat columns default to 0
           // server-side (see migration 20261004000000_lock_players_writes.sql).
+          const candidate = this.randomUsername();
           const { error: insErr } = await sb.from('players').insert({
             id: this.user.id,
-            username: this.username
+            username: candidate
           });
-          if (insErr) console.warn('players insert failed', insErr);
+          if (!insErr) {
+            this.username = candidate;
+            this.coins = 0;
+            return;
+          }
+
+          // 23505 = unique violation: either the random name is taken
+          // (case-insensitive) or another tab/request already created this
+          // user's row. Loop: the lookup above picks up the row in the second
+          // case, otherwise we try a fresh name.
+          if (insErr.code !== '23505') {
+            console.warn('players insert failed', insErr);
+            break;
+          }
         }
+        // No row was created: leave username unset so callers retry later.
+        this.username = null;
+        this.coins = 0;
       } catch (e) {
         console.warn('ensurePlayerRow exception', e);
+      }
+    },
+
+    // Re-read the wallet from the server. Returns the coin balance, or null if
+    // it could not be read.
+    async refreshCoins() {
+      if (!sb || !this.user) return null;
+      try {
+        const { data, error } = await sb.rpc('get_my_player').maybeSingle();
+        if (error || !data || data.coins === undefined) return null;
+        this.coins = data.coins;
+        return data.coins;
+      } catch (e) {
+        console.warn('refreshCoins failed', e);
+        return null;
       }
     },
 
@@ -116,6 +150,8 @@
       return data;
     },
 
+    // Resolves to null when there is nothing to submit (offline / logged out),
+    // otherwise `{ ok: true, id }` or `{ ok: false, error }` (never rejects).
     async submitRound(summary) {
       if (!sb || !this.user) return null;
       try {
@@ -132,12 +168,12 @@
           // No client-side fallback: player stats are only writable via the
           // submit_round RPC (see 20261004000000_lock_players_writes.sql).
           console.warn('submit_round RPC failed', rpcErr);
-          return null;
+          return { ok: false, error: rpcErr.message || 'Round not saved' };
         }
-        return rpcData;
+        return { ok: true, id: rpcData };
       } catch (e) {
         console.warn('Supabase round sync failed', e);
-        return null;
+        return { ok: false, error: 'Network error' };
       }
     },
 
@@ -186,7 +222,7 @@
 
     async signInWithOtp(email) {
       if (!sb) throw new Error('Offline');
-      const redirectUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.reel-golf.com';
+      const redirectUrl = typeof window !== 'undefined' ? window.location.origin + '/' : 'https://app.reel-golf.com/';
       return await sb.auth.signInWithOtp({
         email,
         options: { emailRedirectTo: redirectUrl }

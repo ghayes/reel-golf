@@ -381,19 +381,49 @@
   }
 
   // Hook game events
+  let roundSeq = 0; // guards against a slow submission repainting a newer round
   function hookGame() {
     if (window.RG_GAME) {
-      window.RG_GAME.onGameOver = (summary, earnedCoins) => {
+      window.RG_GAME.onGameOver = (summary, earnedCoins, submission) => {
         rulesBlock.classList.add('hidden');
         finalStats.classList.remove('hidden');
-        if (window.RG_API && window.RG_API.user) {
-          window.RG_API.coins += earnedCoins;
-          updateCoinDisplays();
+        const api = window.RG_API;
+        const loggedIn = !!(api && api.user);
+        const coinsBefore = loggedIn ? api.coins : 0;
+        const seq = ++roundSeq;
+
+        const render = (coinLine) => {
+          finalStats.innerHTML =
+            `FINAL SCORE <em>${num(summary.score)}</em>${coinLine}<br>` +
+            `LONGEST DRIVE <em>${Math.round(num(summary.bestDist))} yd</em><br>` +
+            `FISH LANDED <em>${num(summary.fishCaught)}</em>`;
+        };
+        const showError = (text) => {
+          const note = document.createElement('div');
+          note.className = 'round-error';
+          note.textContent = text;
+          finalStats.appendChild(note);
+        };
+
+        if (!loggedIn) {
+          render(` &middot; +${num(earnedCoins)} 🪙`);
+        } else {
+          // Coins are credited by the server only; do not show them until the
+          // round is accepted, and take the balance from the server.
+          render(' &middot; saving&hellip;');
+          Promise.resolve(submission).then(async (res) => {
+            if (res && res.ok) {
+              const coinsAfter = await api.refreshCoins();
+              if (seq !== roundSeq) { updateCoinDisplays(); return; }
+              const gained = coinsAfter === null ? earnedCoins : Math.max(0, coinsAfter - coinsBefore);
+              render(` &middot; +${num(gained)} 🪙`);
+            } else if (seq === roundSeq) {
+              render(' &middot; not saved');
+              showError(`Round not saved: ${(res && res.error) || 'unknown error'}`);
+            }
+            updateCoinDisplays();
+          });
         }
-        finalStats.innerHTML =
-          `FINAL SCORE <em>${num(summary.score)}</em> &middot; +${num(earnedCoins)} 🪙<br>` +
-          `LONGEST DRIVE <em>${Math.round(summary.bestDist)} yd</em><br>` +
-          `FISH LANDED <em>${num(summary.fishCaught)}</em>`;
         startBtn.textContent = 'PLAY AGAIN';
         overlay.classList.remove('hidden');
       };
