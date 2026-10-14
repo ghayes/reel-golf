@@ -194,12 +194,13 @@
     };
     const earnedCoins = Math.floor(S.score / 10);
 
-    if (window.RG_API) {
-      window.RG_API.submitRound(summary);
-    }
+    // Resolves to null (nothing submitted), { ok, id } or { ok, error }.
+    const submission = window.RG_API
+      ? Promise.resolve(window.RG_API.submitRound(summary)).catch(() => ({ ok: false, error: 'Round not saved' }))
+      : Promise.resolve(null);
 
     if (window.RG_GAME && typeof window.RG_GAME.onGameOver === 'function') {
-      window.RG_GAME.onGameOver(summary, earnedCoins);
+      window.RG_GAME.onGameOver(summary, earnedCoins, submission);
     }
   }
 
