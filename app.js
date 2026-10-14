@@ -422,6 +422,9 @@
               showError(`Round not saved: ${(res && res.error) || 'unknown error'}`);
             }
             updateCoinDisplays();
+          }).catch((e) => {
+            console.warn('round result render failed', e);
+            if (seq === roundSeq) render(' &middot; result unknown');
           });
         }
         startBtn.textContent = 'PLAY AGAIN';

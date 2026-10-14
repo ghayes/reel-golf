@@ -92,9 +92,12 @@
     // it could not be read.
     async refreshCoins() {
       if (!sb || !this.user) return null;
+      const uid = this.user.id;
       try {
         const { data, error } = await sb.rpc('get_my_player').maybeSingle();
         if (error || !data || data.coins === undefined) return null;
+        // Signed out or switched account while the request was in flight.
+        if (!this.user || this.user.id !== uid) return null;
         this.coins = data.coins;
         return data.coins;
       } catch (e) {
